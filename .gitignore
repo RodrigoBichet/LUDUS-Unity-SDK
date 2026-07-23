@@ -1,0 +1,29 @@
+# Unity — arquivos gerados
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+UserSettings/
+MemoryCaptures/
+
+# Builds
+[Bb]uild/
+[Bb]uilds/
+
+# IDEs e arquivos regeneráveis
+.vs/
+.idea/
+.vscode/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+Desktop.ini

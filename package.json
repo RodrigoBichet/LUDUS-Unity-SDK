@@ -1,0 +1,18 @@
+{
+    "name": "br.edu.ufpel.ludus.sdk",
+    "version": "0.1.0",
+    "displayName": "LUDUS Unity SDK",
+    "description": "SDK Unity plugável para coleta de telemetria educacional compatível com a plataforma LUDUS Acompanha.",
+    "unity": "6000.0",
+    "author": {
+        "name": "Rodrigo Leitzke Bichet",
+        "url": "https://github.com/RodrigoBichet"
+    },
+    "keywords": [
+        "ludus",
+        "telemetria",
+        "jogos-educacionais",
+        "unity",
+        "webgl"
+    ]
+}
