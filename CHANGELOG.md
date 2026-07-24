@@ -10,3 +10,5 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 - Assembly próprio para o código de Runtime.
 - Contratos neutros de configuração, capacidades e participante.
 - Modelo interno canônico de sessão e registros de telemetria.
+- Serializador JSON canônico com validação local de sessão e payloads de eventos.
+- Testes EditMode para serialização canônica e rejeição de payload inválido.
