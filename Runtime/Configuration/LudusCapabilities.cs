@@ -39,5 +39,22 @@ namespace LudusSDK
 
         [Tooltip("O jogo pode registrar eventos semânticos próprios.")]
         public bool customEvents = true;
+
+        public LudusCapabilities Clone()
+        {
+            return new LudusCapabilities
+            {
+                clicks = clicks,
+                mousePath = mousePath,
+                dragPath = dragPath,
+                screenshots = screenshots,
+                inactivity = inactivity,
+                focusEvents = focusEvents,
+                phaseEvents = phaseEvents,
+                correctWrong = correctWrong,
+                categoryEvents = categoryEvents,
+                customEvents = customEvents,
+            };
+        }
     }
 }
