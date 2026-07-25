@@ -9,6 +9,8 @@ namespace LudusSDK
         private LudusSession activeSession;
         private LudusCaptureContext activeCaptureContext;
         private string activeContextInstanceId;
+        private const int MaxClicks = 10000;
+        private const int MaxMousePathPoints = 50000;
 
         public bool HasActiveSession => activeSession != null;
 
@@ -128,6 +130,106 @@ namespace LudusSDK
             return true;
         }
 
+public bool TryRecordClick(
+    float x,
+    float y,
+    out string errorMessage
+)
+{
+    if (!HasActiveSession)
+    {
+        errorMessage =
+            "Não existe sessão ativa para registrar um clique.";
+        return false;
+    }
+
+    if (
+        !TryValidateRawCapture(
+            activeSession.capabilities.clicks,
+            "clicks",
+            x,
+            y,
+            out errorMessage
+        )
+    )
+    {
+        return false;
+    }
+
+    if (activeSession.clicks.Count >= MaxClicks)
+    {
+        errorMessage = "O limite de cliques da sessão foi atingido.";
+        return false;
+    }
+
+    int timestamp = GetElapsedMilliseconds();
+
+    activeSession.clicks.Add(
+        new LudusClick
+        {
+            x = x,
+            y = y,
+            timestamp = timestamp,
+        }
+    );
+
+    activeSession.metrics.totalClicks++;
+    RegisterFirstAction(timestamp);
+
+    errorMessage = string.Empty;
+    return true;
+}
+
+public bool TryRecordMousePoint(
+    float x,
+    float y,
+    out string errorMessage
+)
+{
+    if (!HasActiveSession)
+    {
+        errorMessage =
+            "Não existe sessão ativa para registrar um ponto do mouse.";
+        return false;
+    }
+
+    if (
+        !TryValidateRawCapture(
+            activeSession.capabilities.mousePath,
+            "mousePath",
+            x,
+            y,
+            out errorMessage
+        )
+    )
+    {
+        return false;
+    }
+
+    if (activeSession.mousePath.Count >= MaxMousePathPoints)
+    {
+        errorMessage =
+            "O limite de pontos de trajetória do mouse foi atingido.";
+        return false;
+    }
+
+    int timestamp = GetElapsedMilliseconds();
+
+    activeSession.mousePath.Add(
+        new LudusPathPoint
+        {
+            x = x,
+            y = y,
+            t = timestamp,
+        }
+    );
+
+    RegisterFirstAction(timestamp);
+
+    errorMessage = string.Empty;
+    return true;
+}
+
         public bool TryEndAndSerialize(
             out string json,
             out string errorMessage
@@ -160,6 +262,71 @@ namespace LudusSDK
                 out errorMessage
             );
         }
+
+private bool TryValidateRawCapture(
+    bool capabilityEnabled,
+    string capabilityName,
+    float x,
+    float y,
+    out string errorMessage
+)
+{
+    if (!HasActiveCaptureContext)
+    {
+        errorMessage =
+            "Não existe contexto de captura ativo para registrar interação.";
+        return false;
+    }
+
+    if (!capabilityEnabled)
+    {
+        errorMessage =
+            $"A capacidade {capabilityName} está desativada.";
+        return false;
+    }
+
+    if (!HasValidPoint(x, y))
+    {
+        errorMessage =
+            "A interação possui coordenadas inválidas para o viewport.";
+        return false;
+    }
+
+    errorMessage = string.Empty;
+    return true;
+}
+
+private bool HasValidPoint(float x, float y)
+{
+    if (
+        float.IsNaN(x) ||
+        float.IsInfinity(x) ||
+        float.IsNaN(y) ||
+        float.IsInfinity(y)
+    )
+    {
+        return false;
+    }
+
+    if (activeSession.viewport.coordinateUnit == "normalized")
+    {
+        return x >= 0f && x <= 1f && y >= 0f && y <= 1f;
+    }
+
+    return
+        x >= 0f &&
+        x <= activeSession.viewport.widthPx &&
+        y >= 0f &&
+        y <= activeSession.viewport.heightPx;
+}
+
+private void RegisterFirstAction(int timestamp)
+{
+    if (activeSession.metrics.firstActionMs < 0)
+    {
+        activeSession.metrics.firstActionMs = timestamp;
+    }
+}
 
         private void EndActiveCaptureContext(int timestamp)
         {

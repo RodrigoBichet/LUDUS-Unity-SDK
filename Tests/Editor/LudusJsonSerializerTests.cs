@@ -194,5 +194,83 @@ public void SessionLifecycle_AoTrocarContexto_EncerraOAnterior()
     Assert.That(json, Does.Contain("CaptureContextStarted"));
     Assert.That(json, Does.Contain("CaptureContextEnded"));
 }
+
+[Test]
+public void SessionLifecycle_ComContextoAtivo_RegistraCliqueETrajetoria()
+{
+    LudusSdkConfig config =
+        ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+    config.gameId = "jogo-teste";
+    config.gameVersion = "0.1.0-teste";
+
+    LudusSessionLifecycle lifecycle = new LudusSessionLifecycle();
+
+    bool started = lifecycle.TryStartSession(
+        config,
+        new LudusParticipant(
+            "000000000000000000000005",
+            "Estudante Fictício"
+        ),
+        new LudusViewport(1280, 720, "pixel", "bottom-left"),
+        out string startError
+    );
+
+    bool clickOutsideContext = lifecycle.TryRecordClick(
+        100f,
+        200f,
+        out string outsideContextError
+    );
+
+    bool contextStarted = lifecycle.TryBeginCaptureContext(
+        new LudusCaptureContext(
+            "Atividade principal",
+            "canvas",
+            "Observação de interação"
+        ),
+        out string contextError
+    );
+
+    bool clickRecorded = lifecycle.TryRecordClick(
+        100f,
+        200f,
+        out string clickError
+    );
+
+    bool mousePointRecorded = lifecycle.TryRecordMousePoint(
+        150f,
+        250f,
+        out string mousePointError
+    );
+
+    bool ended = lifecycle.TryEndAndSerialize(
+        out string json,
+        out string endError
+    );
+
+    Object.DestroyImmediate(config);
+
+    Assert.That(started, Is.True, startError);
+    Assert.That(clickOutsideContext, Is.False);
+    Assert.That(outsideContextError, Does.Contain("contexto"));
+    Assert.That(contextStarted, Is.True, contextError);
+    Assert.That(clickRecorded, Is.True, clickError);
+    Assert.That(mousePointRecorded, Is.True, mousePointError);
+    Assert.That(ended, Is.True, endError);
+    Assert.That(
+        lifecycle.LastCompletedSession.clicks.Count,
+        Is.EqualTo(1)
+    );
+    Assert.That(
+        lifecycle.LastCompletedSession.mousePath.Count,
+        Is.EqualTo(1)
+    );
+    Assert.That(
+        lifecycle.LastCompletedSession.metrics.totalClicks,
+        Is.EqualTo(1)
+    );
+    Assert.That(json, Does.Contain("\"clicks\":["));
+    Assert.That(json, Does.Contain("\"mousePath\":["));
+}
     }
 }

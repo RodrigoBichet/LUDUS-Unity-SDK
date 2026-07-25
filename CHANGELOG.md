@@ -14,3 +14,4 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 - Testes EditMode para serialização canônica e rejeição de payload inválido.
 - API de ciclo de vida para iniciar, encerrar e exportar sessões localmente.
 - Contextos genéricos de captura com início, troca e encerramento automáticos.
+- Registro local de cliques e trajetória do mouse condicionado ao contexto ativo.
