@@ -15,3 +15,4 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 - API de ciclo de vida para iniciar, encerrar e exportar sessões localmente.
 - Contextos genéricos de captura com início, troca e encerramento automáticos.
 - Registro local de cliques e trajetória do mouse condicionado ao contexto ativo.
+- Componente Unity para configurar, iniciar e encerrar sessões pelo Inspector ou código.

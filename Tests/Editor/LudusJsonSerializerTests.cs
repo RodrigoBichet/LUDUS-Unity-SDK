@@ -272,5 +272,40 @@ public void SessionLifecycle_ComContextoAtivo_RegistraCliqueETrajetoria()
     Assert.That(json, Does.Contain("\"clicks\":["));
     Assert.That(json, Does.Contain("\"mousePath\":["));
 }
+
+        [Test]
+        public void SessionController_ComConfigFicticia_IniciaEExportaSessao()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+            config.gameId = "jogo-teste";
+            config.gameVersion = "0.1.0-teste";
+
+            GameObject host = new GameObject("LudusSessionControllerTeste");
+            LudusSessionController controller =
+                host.AddComponent<LudusSessionController>();
+
+            controller.Configure(config);
+
+            bool started = controller.TryStartSession(
+                "000000000000000000000006",
+                "Estudante Fictício",
+                out string startError
+            );
+
+            bool ended = controller.TryEndAndSerialize(
+                out string json,
+                out string endError
+            );
+
+            Assert.That(started, Is.True, startError);
+            Assert.That(ended, Is.True, endError);
+            Assert.That(controller.HasActiveSession, Is.False);
+            Assert.That(json, Does.Contain("\"sessionId\":"));
+
+            Object.DestroyImmediate(host);
+            Object.DestroyImmediate(config);
+        }
     }
 }
