@@ -6,6 +6,9 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 
 ### Adicionado
 
+- Coletor opcional para o novo Input System, selecionado automaticamente ao criar a base de coleta.
+- Botões visíveis na aba Game da amostra de laboratório para iniciar e encerrar a sessão fictícia.
+
 - Estrutura inicial do pacote Unity Package Manager.
 - Assembly próprio para o código de Runtime.
 - Contratos neutros de configuração, capacidades e participante.
@@ -26,3 +29,5 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 - Capacidades ainda não implementadas deixam de ser habilitadas por padrão.
 - Inspector separa coleta essencial de opções avançadas e explica o destino da sessão.
 - Recortes localizam a base LUDUS automaticamente e usam o nome do objeto como título padrão.
+- Amostra de laboratório também localiza automaticamente a base LUDUS.
+- Amostra abre seu recorte fictício automaticamente ao iniciar a sessão.

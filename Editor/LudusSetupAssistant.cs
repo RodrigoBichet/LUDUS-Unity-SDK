@@ -1,3 +1,4 @@
+using System;
 using LudusSDK;
 using UnityEditor;
 using UnityEngine;
@@ -15,17 +16,100 @@ namespace LudusSDK.Editor
 
             LudusSessionController controller =
                 root.AddComponent<LudusSessionController>();
-            LudusLegacyPointerTracker pointerTracker =
-                root.AddComponent<LudusLegacyPointerTracker>();
             LudusSessionExporter exporter =
                 root.AddComponent<LudusSessionExporter>();
 
             controller.config = config;
-            pointerTracker.sessionController = controller;
+            AddPreferredPointerTracker(root, controller);
             exporter.sessionController = controller;
 
             Selection.activeGameObject = root;
             EditorGUIUtility.PingObject(root);
+        }
+
+        [MenuItem("GameObject/LUDUS/Atualizar coletor de mouse da base selecionada", false, 11)]
+        private static void UpdateSelectedPointerTracker()
+        {
+            GameObject root = Selection.activeGameObject;
+            LudusSessionController controller = root == null
+                ? null
+                : root.GetComponent<LudusSessionController>();
+
+            if (controller == null)
+            {
+                EditorUtility.DisplayDialog(
+                    "LUDUS",
+                    "Selecione o objeto LUDUS SDK que possui o controlador da sessão.",
+                    "Entendi"
+                );
+                return;
+            }
+
+            Type inputSystemTrackerType = GetInputSystemTrackerType();
+            if (inputSystemTrackerType == null)
+            {
+                EditorUtility.DisplayDialog(
+                    "LUDUS",
+                    "O pacote novo Input System não está disponível neste projeto. A base continuará usando o coletor clássico da Unity.",
+                    "Entendi"
+                );
+                return;
+            }
+
+            Component inputSystemTracker = root.GetComponent(inputSystemTrackerType);
+            if (inputSystemTracker == null)
+            {
+                inputSystemTracker = Undo.AddComponent(root, inputSystemTrackerType);
+            }
+
+            AssignController(inputSystemTracker, controller);
+
+            LudusLegacyPointerTracker legacyTracker =
+                root.GetComponent<LudusLegacyPointerTracker>();
+            if (legacyTracker != null)
+            {
+                Undo.DestroyObjectImmediate(legacyTracker);
+            }
+
+            Selection.activeGameObject = root;
+            EditorGUIUtility.PingObject(root);
+        }
+
+        private static void AddPreferredPointerTracker(
+            GameObject root,
+            LudusSessionController controller
+        )
+        {
+            Type inputSystemTrackerType = GetInputSystemTrackerType();
+
+            if (inputSystemTrackerType != null)
+            {
+                Component tracker = root.AddComponent(inputSystemTrackerType);
+                AssignController(tracker, controller);
+                return;
+            }
+
+            LudusLegacyPointerTracker legacyTracker =
+                root.AddComponent<LudusLegacyPointerTracker>();
+            legacyTracker.sessionController = controller;
+        }
+
+        private static Type GetInputSystemTrackerType()
+        {
+            return Type.GetType(
+                "LudusSDK.LudusInputSystemPointerTracker, Ludus.Unity.InputSystem"
+            );
+        }
+
+        private static void AssignController(
+            Component tracker,
+            LudusSessionController controller
+        )
+        {
+            SerializedObject serializedTracker = new SerializedObject(tracker);
+            serializedTracker.FindProperty("sessionController").objectReferenceValue =
+                controller;
+            serializedTracker.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static LudusSdkConfig CreateGameConfig()

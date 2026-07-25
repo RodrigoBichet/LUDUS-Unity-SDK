@@ -1,0 +1,25 @@
+{
+  "name": "Ludus.Unity.InputSystem",
+  "rootNamespace": "LudusSDK",
+  "references": [
+    "Ludus.Unity",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [
+    "LUDUS_INPUT_SYSTEM_AVAILABLE"
+  ],
+  "versionDefines": [
+    {
+      "name": "com.unity.inputsystem",
+      "expression": "1.0.0",
+      "define": "LUDUS_INPUT_SYSTEM_AVAILABLE"
+    }
+  ],
+  "noEngineReferences": false
+}

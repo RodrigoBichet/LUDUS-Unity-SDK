@@ -40,7 +40,9 @@ Selecione esse arquivo no painel Project e informe o **Nome do jogo**, como `Meu
 
 Não coloque JWT, senha ou credencial de usuário nesse asset.
 
-Projetos que usam somente o novo Input System precisarão do adaptador específico, planejado para uma etapa posterior.
+Se o projeto possuir o pacote **Input System**, a base escolhe automaticamente o coletor compatível com ele. Caso contrário, usa o coletor clássico da Unity. Não é preciso alterar ProjectSettings nem adicionar os dois coletores.
+
+No Editor, alguns layouts podem encaminhar o mouse para a própria interface da Unity. O SDK usa uma rota de compatibilidade para o laboratório quando isso ocorrer. Essa particularidade não é uma etapa de integração nem uma exigência para o build WebGL.
 
 ### 2. Delimite o recorte observado
 
@@ -97,13 +99,13 @@ O endpoint direto de telemetria não recebe JWT nesta etapa por compatibilidade.
 
 ## Amostra de laboratório
 
-No Package Manager, importe a amostra **Integração Básica**. Ela contém um componente com identidade fictícia e comandos no menu de contexto do Inspector. Leia `Samples~/BasicIntegration/README.md` antes de usar.
+No Package Manager, importe a amostra **Integração Básica**. Ela contém um componente com identidade fictícia e botões visíveis na aba Game para iniciar e encerrar o ensaio. Leia `Samples~/BasicIntegration/README.md` antes de usar.
 
 ## Validação recomendada
 
 1. Execute os testes EditMode do pacote.
 2. Inicie uma sessão com identidade fictícia no laboratório.
-3. Ative um contexto, mova o mouse e clique.
+3. Ative um contexto — ou use a amostra, que cria um recorte fictício automaticamente —, mova o mouse e clique.
 4. Encerre e confira o JSON no Console.
 5. Teste fallback sem URL, em ambiente local controlado.
 6. Teste envio apenas contra backend local e banco temporário.
