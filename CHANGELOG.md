@@ -16,3 +16,4 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 - Contextos genéricos de captura com início, troca e encerramento automáticos.
 - Registro local de cliques e trajetória do mouse condicionado ao contexto ativo.
 - Componente Unity para configurar, iniciar e encerrar sessões pelo Inspector ou código.
+- Componente opcional de captura de mouse e clique com o sistema de Input clássico da Unity.

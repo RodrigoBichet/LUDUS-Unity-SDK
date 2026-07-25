@@ -307,5 +307,78 @@ public void SessionLifecycle_ComContextoAtivo_RegistraCliqueETrajetoria()
             Object.DestroyImmediate(host);
             Object.DestroyImmediate(config);
         }
+
+        [Test]
+        public void SessionController_ComContextoAtivo_ExpõeEstadoECapturaInteração()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+            config.gameId = "jogo-teste";
+            config.gameVersion = "0.1.0-teste";
+
+            GameObject host = new GameObject("LudusPointerTrackerTeste");
+            LudusSessionController controller =
+                host.AddComponent<LudusSessionController>();
+
+            controller.Configure(config);
+
+            bool started = controller.TryStartSession(
+                "000000000000000000000007",
+                "Estudante Fictício",
+                out string startError
+            );
+
+            bool clickOutsideContext = controller.TryRecordClick(
+                new Vector2(100f, 200f),
+                out string outsideContextError
+            );
+
+            bool contextStarted = controller.TryBeginCaptureContext(
+                "Atividade de teste",
+                "canvas",
+                "Validação de captura",
+                out string contextError
+            );
+
+            bool clickRecorded = controller.TryRecordClick(
+                new Vector2(100f, 200f),
+                out string clickError
+            );
+
+            bool mousePointRecorded = controller.TryRecordMousePoint(
+                new Vector2(150f, 250f),
+                out string mousePointError
+            );
+
+            bool contextWasActive = controller.HasActiveCaptureContext;
+
+            bool ended = controller.TryEndAndSerialize(
+                out string json,
+                out string endError
+            );
+
+            Assert.That(started, Is.True, startError);
+            Assert.That(clickOutsideContext, Is.False);
+            Assert.That(outsideContextError, Does.Contain("contexto"));
+            Assert.That(contextStarted, Is.True, contextError);
+            Assert.That(contextWasActive, Is.True);
+            Assert.That(clickRecorded, Is.True, clickError);
+            Assert.That(mousePointRecorded, Is.True, mousePointError);
+            Assert.That(ended, Is.True, endError);
+            Assert.That(controller.HasActiveCaptureContext, Is.False);
+            Assert.That(
+                controller.LastCompletedSession.clicks.Count,
+                Is.EqualTo(1)
+            );
+            Assert.That(
+                controller.LastCompletedSession.mousePath.Count,
+                Is.EqualTo(1)
+            );
+            Assert.That(json, Does.Contain("\"mousePath\":["));
+
+            Object.DestroyImmediate(host);
+            Object.DestroyImmediate(config);
+        }
     }
 }

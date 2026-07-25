@@ -18,6 +18,9 @@ namespace LudusSDK
 
         public bool HasActiveSession => lifecycle.HasActiveSession;
 
+        public bool HasActiveCaptureContext =>
+            lifecycle.HasActiveCaptureContext;
+
         public LudusSession LastCompletedSession =>
             lifecycle.LastCompletedSession;
 
