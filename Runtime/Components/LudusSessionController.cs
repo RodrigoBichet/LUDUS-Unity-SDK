@@ -81,9 +81,28 @@ namespace LudusSDK
             );
         }
 
+        public bool TryBeginCaptureContext(
+            LudusCaptureContext context,
+            out string errorMessage
+        )
+        {
+            return lifecycle.TryBeginCaptureContext(context, out errorMessage);
+        }
+
         public bool TryEndCaptureContext(out string errorMessage)
         {
             return lifecycle.TryEndCaptureContext(out errorMessage);
+        }
+
+        public bool TryEndCaptureContext(
+            LudusCaptureContext expectedContext,
+            out string errorMessage
+        )
+        {
+            return lifecycle.TryEndCaptureContext(
+                expectedContext,
+                out errorMessage
+            );
         }
 
         public bool TryRecordClick(

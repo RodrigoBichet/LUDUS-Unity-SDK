@@ -111,6 +111,14 @@ namespace LudusSDK
 
         public bool TryEndCaptureContext(out string errorMessage)
         {
+            return TryEndCaptureContext(null, out errorMessage);
+        }
+
+        public bool TryEndCaptureContext(
+            LudusCaptureContext expectedContext,
+            out string errorMessage
+        )
+        {
             if (!HasActiveSession)
             {
                 errorMessage =
@@ -121,6 +129,16 @@ namespace LudusSDK
             if (!HasActiveCaptureContext)
             {
                 errorMessage = "Não existe contexto de captura ativo.";
+                return false;
+            }
+
+            if (
+                expectedContext != null &&
+                !ReferenceEquals(activeCaptureContext, expectedContext)
+            )
+            {
+                errorMessage =
+                    "O contexto informado não é mais o contexto ativo.";
                 return false;
             }
 

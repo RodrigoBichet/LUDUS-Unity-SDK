@@ -380,5 +380,64 @@ public void SessionLifecycle_ComContextoAtivo_RegistraCliqueETrajetoria()
             Object.DestroyImmediate(host);
             Object.DestroyImmediate(config);
         }
+
+        [Test]
+        public void SessionLifecycle_AoEncerrarContextoSubstituido_PreservaOAtual()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+            config.gameId = "jogo-teste";
+            config.gameVersion = "0.1.0-teste";
+
+            LudusSessionLifecycle lifecycle = new LudusSessionLifecycle();
+            LudusCaptureContext firstContext = new LudusCaptureContext(
+                "Painel inicial",
+                "canvas"
+            );
+            LudusCaptureContext secondContext = new LudusCaptureContext(
+                "Atividade principal",
+                "activity"
+            );
+
+            bool started = lifecycle.TryStartSession(
+                config,
+                new LudusParticipant(
+                    "000000000000000000000008",
+                    "Estudante Fictício"
+                ),
+                new LudusViewport(1280, 720, "pixel", "bottom-left"),
+                out string startError
+            );
+
+            bool firstContextStarted = lifecycle.TryBeginCaptureContext(
+                firstContext,
+                out string firstContextError
+            );
+            bool secondContextStarted = lifecycle.TryBeginCaptureContext(
+                secondContext,
+                out string secondContextError
+            );
+            bool oldContextEnded = lifecycle.TryEndCaptureContext(
+                firstContext,
+                out string oldContextError
+            );
+            bool contextRemainedActive = lifecycle.HasActiveCaptureContext;
+            bool activeContextEnded = lifecycle.TryEndCaptureContext(
+                secondContext,
+                out string activeContextError
+            );
+
+            Object.DestroyImmediate(config);
+
+            Assert.That(started, Is.True, startError);
+            Assert.That(firstContextStarted, Is.True, firstContextError);
+            Assert.That(secondContextStarted, Is.True, secondContextError);
+            Assert.That(oldContextEnded, Is.False);
+            Assert.That(oldContextError, Does.Contain("não é mais"));
+            Assert.That(contextRemainedActive, Is.True);
+            Assert.That(activeContextEnded, Is.True, activeContextError);
+            Assert.That(lifecycle.HasActiveCaptureContext, Is.False);
+        }
     }
 }
