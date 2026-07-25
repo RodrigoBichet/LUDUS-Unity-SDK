@@ -135,5 +135,64 @@ public void SessionLifecycle_ComDadosFicticios_EncerraEExportaJson()
     Assert.That(lifecycle.LastCompletedSession, Is.Not.Null);
     Assert.That(json, Does.Contain("\"durationMs\":"));
 }
+
+[Test]
+public void SessionLifecycle_AoTrocarContexto_EncerraOAnterior()
+{
+    LudusSdkConfig config =
+        ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+    config.gameId = "jogo-teste";
+    config.gameVersion = "0.1.0-teste";
+
+    LudusSessionLifecycle lifecycle = new LudusSessionLifecycle();
+
+    bool started = lifecycle.TryStartSession(
+        config,
+        new LudusParticipant(
+            "000000000000000000000004",
+            "Estudante Fictício"
+        ),
+        new LudusViewport(1280, 720, "pixel", "bottom-left"),
+        out string startError
+    );
+
+    bool firstContextStarted = lifecycle.TryBeginCaptureContext(
+        new LudusCaptureContext(
+            "Menu principal",
+            "canvas",
+            "Navegação inicial"
+        ),
+        out string firstContextError
+    );
+
+    bool secondContextStarted = lifecycle.TryBeginCaptureContext(
+        new LudusCaptureContext(
+            "Atividade principal",
+            "canvas",
+            "Observação da atividade"
+        ),
+        out string secondContextError
+    );
+
+    bool ended = lifecycle.TryEndAndSerialize(
+        out string json,
+        out string endError
+    );
+
+    Object.DestroyImmediate(config);
+
+    Assert.That(started, Is.True, startError);
+    Assert.That(firstContextStarted, Is.True, firstContextError);
+    Assert.That(secondContextStarted, Is.True, secondContextError);
+    Assert.That(ended, Is.True, endError);
+    Assert.That(lifecycle.HasActiveCaptureContext, Is.False);
+    Assert.That(
+        lifecycle.LastCompletedSession.gameEvents.Count,
+        Is.EqualTo(4)
+    );
+    Assert.That(json, Does.Contain("CaptureContextStarted"));
+    Assert.That(json, Does.Contain("CaptureContextEnded"));
+}
     }
 }

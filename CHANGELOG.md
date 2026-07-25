@@ -13,3 +13,4 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 - Serializador JSON canônico com validação local de sessão e payloads de eventos.
 - Testes EditMode para serialização canônica e rejeição de payload inválido.
 - API de ciclo de vida para iniciar, encerrar e exportar sessões localmente.
+- Contextos genéricos de captura com início, troca e encerramento automáticos.
