@@ -439,5 +439,67 @@ public void SessionLifecycle_ComContextoAtivo_RegistraCliqueETrajetoria()
             Assert.That(activeContextEnded, Is.True, activeContextError);
             Assert.That(lifecycle.HasActiveCaptureContext, Is.False);
         }
+
+        [Test]
+        public void SessionController_AoSerializar_DisparaEventoComJson()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+            config.gameId = "jogo-teste";
+            config.gameVersion = "0.1.0-teste";
+
+            GameObject host = new GameObject("LudusExporterTeste");
+            LudusSessionController controller =
+                host.AddComponent<LudusSessionController>();
+            controller.Configure(config);
+
+            bool eventReceived = false;
+            string eventJson = string.Empty;
+            controller.SessionSerialized += (_, json) =>
+            {
+                eventReceived = true;
+                eventJson = json;
+            };
+
+            bool started = controller.TryStartSession(
+                "000000000000000000000009",
+                "Estudante Fictício",
+                out string startError
+            );
+            bool ended = controller.TryEndAndSerialize(
+                out string json,
+                out string endError
+            );
+
+            Assert.That(started, Is.True, startError);
+            Assert.That(ended, Is.True, endError);
+            Assert.That(eventReceived, Is.True);
+            Assert.That(eventJson, Is.EqualTo(json));
+
+            Object.DestroyImmediate(host);
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void Config_ComPastaDeFallbackInsegura_RejeitaSessao()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+            config.gameId = "jogo-teste";
+            config.gameVersion = "0.1.0-teste";
+            config.enableLocalFallback = true;
+            config.fallbackFolderName = "../fora-do-escopo";
+
+            bool valid = config.TryValidateForSession(
+                out string errorMessage
+            );
+
+            Object.DestroyImmediate(config);
+
+            Assert.That(valid, Is.False);
+            Assert.That(errorMessage, Does.Contain("fallbackFolderName"));
+        }
     }
 }

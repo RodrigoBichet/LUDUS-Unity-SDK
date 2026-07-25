@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace LudusSDK
@@ -23,6 +24,10 @@ namespace LudusSDK
 
         public LudusSession LastCompletedSession =>
             lifecycle.LastCompletedSession;
+
+        public LudusSdkConfig Config => config;
+
+        public event Action<LudusSession, string> SessionSerialized;
 
         private void Awake()
         {
@@ -134,7 +139,24 @@ namespace LudusSDK
             out string errorMessage
         )
         {
-            return lifecycle.TryEndAndSerialize(out json, out errorMessage);
+            bool serialized = lifecycle.TryEndAndSerialize(
+                out json,
+                out errorMessage
+            );
+
+            if (serialized)
+            {
+                try
+                {
+                    SessionSerialized?.Invoke(LastCompletedSession, json);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception, this);
+                }
+            }
+
+            return serialized;
         }
     }
 }

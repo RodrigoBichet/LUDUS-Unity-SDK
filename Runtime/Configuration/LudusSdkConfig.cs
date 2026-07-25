@@ -86,6 +86,16 @@ namespace LudusSDK
                 return false;
             }
 
+            if (
+                enableLocalFallback &&
+                !HasValidFallbackFolderName(fallbackFolderName)
+            )
+            {
+                errorMessage =
+                    "fallbackFolderName deve usar letras minúsculas, números, hífens ou sublinhados, com até 100 caracteres.";
+                return false;
+            }
+
             errorMessage = string.Empty;
             return true;
         }
@@ -131,6 +141,29 @@ namespace LudusSDK
             return
                 apiUri.Scheme == Uri.UriSchemeHttp ||
                 apiUri.Scheme == Uri.UriSchemeHttps;
+        }
+
+        private static bool HasValidFallbackFolderName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value) || value.Length > 100)
+            {
+                return false;
+            }
+
+            foreach (char character in value)
+            {
+                bool allowed =
+                    IsLowercaseLetterOrDigit(character) ||
+                    character == '-' ||
+                    character == '_';
+
+                if (!allowed)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

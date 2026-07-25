@@ -18,3 +18,4 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 - Componente Unity para configurar, iniciar e encerrar sessões pelo Inspector ou código.
 - Componente opcional de captura de mouse e clique com o sistema de Input clássico da Unity.
 - Componente de Inspector para delimitar contextos de captura por objeto ativo.
+- Exportador opcional para POST público de telemetria e fallback local por sessão.
