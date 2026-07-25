@@ -8,9 +8,11 @@ namespace LudusSDK
     {
         [Header("Configuração")]
 
-        [Tooltip("Asset com a configuração reutilizável do SDK.")]
+        [InspectorName("Configuração do jogo (asset)")]
+        [Tooltip("Crie este asset em Project > Create > LUDUS > Configuração do SDK e arraste-o aqui.")]
         public LudusSdkConfig config;
 
+        [InspectorName("Manter ativo ao trocar de cena")]
         [Tooltip("Mantém este controlador ativo ao trocar de cena.")]
         public bool persistAcrossScenes;
 

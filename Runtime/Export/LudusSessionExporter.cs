@@ -8,7 +8,8 @@ namespace LudusSDK
     [DisallowMultipleComponent]
     public sealed class LudusSessionExporter : MonoBehaviour
     {
-        [Tooltip("Controlador que produz o JSON da sessão.")]
+        [InspectorName("Objeto controlador LUDUS SDK")]
+        [Tooltip("Arraste aqui o GameObject que possui o componente LudusSessionController.")]
         public LudusSessionController sessionController;
 
         private LudusSessionController subscribedController;
@@ -64,8 +65,22 @@ namespace LudusSDK
         {
             LudusSdkConfig config = sessionController.Config;
 
-            if (!config.sendOnSessionEnd || string.IsNullOrWhiteSpace(config.apiBaseUrl))
+            if (config.saveLocalCopyOnSessionEnd)
             {
+                SaveFallbackIfEnabled(config, session.sessionId, json);
+            }
+
+            if (!config.sendOnSessionEnd)
+            {
+                yield break;
+            }
+
+            if (string.IsNullOrWhiteSpace(config.apiBaseUrl))
+            {
+                Log(
+                    config,
+                    "Conexão com a plataforma não configurada; usando fallback local."
+                );
                 SaveFallbackIfEnabled(config, session.sessionId, json);
                 yield break;
             }
@@ -87,11 +102,14 @@ namespace LudusSDK
 
                 if (request.result == UnityWebRequest.Result.Success)
                 {
-                    LudusOfflineSessionStore.TryDelete(
-                        config,
-                        session.sessionId,
-                        out _
-                    );
+                    if (!config.saveLocalCopyOnSessionEnd)
+                    {
+                        LudusOfflineSessionStore.TryDelete(
+                            config,
+                            session.sessionId,
+                            out _
+                        );
+                    }
 
                     Log(config, "Sessão enviada: " + session.sessionId);
                     yield break;

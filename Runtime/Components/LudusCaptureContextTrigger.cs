@@ -14,26 +14,32 @@ namespace LudusSDK
     public sealed class LudusCaptureContextTrigger : MonoBehaviour
     {
         [Header("Onde a captura começa")]
-        [Tooltip("Controlador que mantém a sessão LUDUS ativa.")]
+        [InspectorName("Objeto controlador LUDUS SDK")]
+        [Tooltip("Arraste aqui o GameObject que possui o componente LudusSessionController.")]
         public LudusSessionController sessionController;
 
+        [InspectorName("Iniciar ao ativar este objeto")]
         [Tooltip(
             "Com este objeto ativo, o SDK inicia a captura neste recorte. " +
             "Use em um Canvas, painel ou objeto-raiz da atividade."
         )]
         public bool beginWhenEnabled = true;
 
+        [InspectorName("Encerrar ao desativar este objeto")]
         [Tooltip("Ao desativar este objeto, encerra o recorte iniciado por ele.")]
         public bool endWhenDisabled = true;
 
         [Header("Informações para o acompanhamento")]
+        [InspectorName("Título exibido no acompanhamento")]
         [Tooltip("Título apresentado ao professor no dashboard.")]
         public string titleForDashboard;
 
+        [InspectorName("Tipo deste recorte")]
         [Tooltip("Tipo geral do recorte, sem depender de um jogo específico.")]
         public LudusCaptureContextKind contextKind =
             LudusCaptureContextKind.Canvas;
 
+        [InspectorName("Objetivo deste recorte (opcional)")]
         [TextArea(2, 4)]
         [Tooltip("Objetivo observacional ou pedagógico opcional deste recorte.")]
         public string observationPurpose;
@@ -41,6 +47,11 @@ namespace LudusSDK
         private LudusCaptureContext ownedContext;
         private bool automaticStartAttempted;
         private bool startedByThisTrigger;
+
+        private void Awake()
+        {
+            TryResolveSessionController();
+        }
 
         private void OnEnable()
         {
@@ -83,14 +94,15 @@ namespace LudusSDK
                 return true;
             }
 
-            if (sessionController == null)
+            if (!TryResolveSessionController())
             {
-                errorMessage = "O LudusSessionController não foi configurado.";
+                errorMessage =
+                    "Não foi possível localizar um LudusSessionController ativo.";
                 return false;
             }
 
             ownedContext = new LudusCaptureContext(
-                titleForDashboard,
+                GetDisplayName(),
                 contextKind.ToString(),
                 observationPurpose
             );
@@ -112,9 +124,10 @@ namespace LudusSDK
                 return false;
             }
 
-            if (sessionController == null)
+            if (!TryResolveSessionController())
             {
-                errorMessage = "O LudusSessionController não foi configurado.";
+                errorMessage =
+                    "Não foi possível localizar um LudusSessionController ativo.";
                 return false;
             }
 
@@ -130,6 +143,26 @@ namespace LudusSDK
             }
 
             return ended;
+        }
+
+        private bool TryResolveSessionController()
+        {
+            if (sessionController != null)
+            {
+                return true;
+            }
+
+            sessionController =
+                FindFirstObjectByType<LudusSessionController>();
+
+            return sessionController != null;
+        }
+
+        private string GetDisplayName()
+        {
+            return string.IsNullOrWhiteSpace(titleForDashboard)
+                ? gameObject.name
+                : titleForDashboard;
         }
     }
 }

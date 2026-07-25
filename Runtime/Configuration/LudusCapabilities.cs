@@ -15,13 +15,13 @@ namespace LudusSDK
         public bool mousePath = true;
 
         [Tooltip("Registra trajetórias de arraste quando disponíveis.")]
-        public bool dragPath = true;
+        public bool dragPath = false;
 
         [Tooltip("Permite capturas de imagem da sessão.")]
         public bool screenshots = false;
 
         [Tooltip("Registra períodos de inatividade.")]
-        public bool inactivity = true;
+        public bool inactivity = false;
 
         [Tooltip("Registra ganho ou perda de foco quando disponível.")]
         public bool focusEvents = false;

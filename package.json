@@ -3,6 +3,13 @@
     "version": "0.1.0",
     "displayName": "LUDUS Unity SDK",
     "description": "SDK Unity plugável para coleta de telemetria educacional compatível com a plataforma LUDUS Acompanha.",
+    "samples": [
+        {
+            "displayName": "Integração Básica",
+            "description": "Fluxo fictício de laboratório para iniciar e encerrar uma sessão LUDUS.",
+            "path": "Samples~/BasicIntegration"
+        }
+    ],
     "unity": "6000.0",
     "author": {
         "name": "Rodrigo Leitzke Bichet",

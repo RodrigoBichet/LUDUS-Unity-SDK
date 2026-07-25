@@ -7,13 +7,16 @@ namespace LudusSDK
     public sealed class LudusLegacyPointerTracker : MonoBehaviour
     {
         [Header("Referência")]
-        [Tooltip("Controlador que mantém a sessão LUDUS ativa.")]
+        [InspectorName("Objeto controlador LUDUS SDK")]
+        [Tooltip("Arraste aqui o GameObject que possui o componente LudusSessionController.")]
         public LudusSessionController sessionController;
 
         [Header("Trajetória")]
+        [InspectorName("Capturar trajetória do mouse")]
         [Tooltip("Registra a posição do mouse em intervalos regulares.")]
         public bool captureMousePath = true;
 
+        [InspectorName("Intervalo entre pontos (ms)")]
         [Range(10, 1000)]
         [Tooltip("Intervalo mínimo, em milissegundos, entre pontos do mouse.")]
         public int mouseSampleIntervalMs = 50;

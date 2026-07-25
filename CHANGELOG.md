@@ -19,3 +19,10 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 - Componente opcional de captura de mouse e clique com o sistema de Input clássico da Unity.
 - Componente de Inspector para delimitar contextos de captura por objeto ativo.
 - Exportador opcional para POST público de telemetria e fallback local por sessão.
+- Guia inicial de integração e amostra fictícia de laboratório.
+- Assistente de criação e rótulos em português para a configuração pelo Inspector.
+- A base de coleta agora cria e conecta automaticamente a configuração do jogo.
+- Configuração simplificada com nome do jogo, envio à plataforma e cópia local opcional.
+- Capacidades ainda não implementadas deixam de ser habilitadas por padrão.
+- Inspector separa coleta essencial de opções avançadas e explica o destino da sessão.
+- Recortes localizam a base LUDUS automaticamente e usam o nome do objeto como título padrão.

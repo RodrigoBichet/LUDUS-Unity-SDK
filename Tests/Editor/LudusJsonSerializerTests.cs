@@ -501,5 +501,85 @@ public void SessionLifecycle_ComContextoAtivo_RegistraCliqueETrajetoria()
             Assert.That(valid, Is.False);
             Assert.That(errorMessage, Does.Contain("fallbackFolderName"));
         }
+
+        [Test]
+        public void Config_ComNomeDoJogo_GeraIdentificadorCanonico()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+            config.gameName = "Histórias Divertidas!";
+            config.gameVersion = "1.0.0";
+
+            LudusSession session = LudusSession.Create(
+                config,
+                new LudusParticipant(
+                    "000000000000000000000010",
+                    "Estudante Fictício"
+                ),
+                new LudusViewport(1280, 720, "pixel", "bottom-left")
+            );
+
+            Object.DestroyImmediate(config);
+
+            Assert.That(session.gameId, Is.EqualTo("historias-divertidas"));
+            Assert.That(session.gameVersion, Is.EqualTo("1.0.0"));
+        }
+
+        [Test]
+        public void Config_Padrao_HabilitaApenasColetaImplementada()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+            Assert.That(config.capabilities.clicks, Is.True);
+            Assert.That(config.capabilities.mousePath, Is.True);
+            Assert.That(config.capabilities.customEvents, Is.True);
+            Assert.That(config.capabilities.dragPath, Is.False);
+            Assert.That(config.capabilities.inactivity, Is.False);
+
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void ContextTrigger_SemTituloOuReferencia_UsaObjetoEControladorAtivo()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameName = "Jogo de Teste";
+
+            GameObject controllerHost =
+                new GameObject("Base LUDUS de Teste");
+            LudusSessionController controller =
+                controllerHost.AddComponent<LudusSessionController>();
+            controller.Configure(config);
+
+            GameObject contextHost = new GameObject("Painel da atividade");
+            LudusCaptureContextTrigger trigger =
+                contextHost.AddComponent<LudusCaptureContextTrigger>();
+            trigger.sessionController = null;
+
+            bool started = controller.TryStartSession(
+                "000000000000000000000011",
+                "Estudante Fictício",
+                out string startError
+            );
+            bool contextStarted = trigger.TryBeginCapture(
+                out string contextError
+            );
+            bool ended = controller.TryEndAndSerialize(
+                out string json,
+                out string endError
+            );
+
+            Assert.That(started, Is.True, startError);
+            Assert.That(contextStarted, Is.True, contextError);
+            Assert.That(ended, Is.True, endError);
+            Assert.That(json, Does.Contain("Painel da atividade"));
+
+            Object.DestroyImmediate(contextHost);
+            Object.DestroyImmediate(controllerHost);
+            Object.DestroyImmediate(config);
+        }
     }
 }

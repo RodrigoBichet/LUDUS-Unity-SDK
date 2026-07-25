@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Text;
 using UnityEngine;
 
 namespace LudusSDK
@@ -12,54 +14,61 @@ namespace LudusSDK
     {
         [Header("Identificação do jogo")]
 
-        [Tooltip("Identificador estável do jogo. Exemplo: historietas-divertidas.")]
+        [Tooltip("Identificador técnico legado. O Inspector usa Nome do jogo.")]
         public string gameId = "";
 
+        [Tooltip("Nome simples apresentado pelo integrador. O SDK gera o identificador técnico.")]
+        public string gameName = "";
+
         [Tooltip("Versão do jogo que está enviando a sessão.")]
-        public string gameVersion = "";
+        public string gameVersion = "1.0.0";
 
         [Header("Transporte")]
 
+        [InspectorName("URL base do servidor (opcional)")]
         [Tooltip("URL base da API. Deixe vazia quando o jogo apenas exportar JSON.")]
         public string apiBaseUrl = "";
 
+        [InspectorName("Enviar automaticamente ao encerrar")]
         [Tooltip("Envia automaticamente a sessão quando ela for encerrada.")]
         public bool sendOnSessionEnd = true;
 
+        [Tooltip("Mantém uma cópia local mesmo quando o envio for bem-sucedido.")]
+        public bool saveLocalCopyOnSessionEnd;
+
         [Header("Fallback offline")]
 
+        [InspectorName("Guardar cópia local se necessário")]
         [Tooltip("Mantém sessões pendentes localmente quando o envio falhar.")]
         public bool enableLocalFallback = true;
 
+        [InspectorName("Nome da pasta local")]
         [Tooltip("Pasta relativa ao persistentDataPath usada pelo fallback.")]
         public string fallbackFolderName = "ludus_offline";
 
         [Header("Coleta")]
 
+        [InspectorName("Tipos de dados a coletar")]
         [Tooltip("Define quais capacidades esta integração disponibiliza.")]
         public LudusCapabilities capabilities = new LudusCapabilities();
 
+        [InspectorName("Tempo para considerar inatividade (segundos)")]
         [Tooltip("Tempo sem interação para caracterizar inatividade, em segundos.")]
         [Min(0f)]
         public float inactivityThresholdSeconds = 10f;
 
         [Header("Desenvolvimento")]
 
+        [InspectorName("Exibir mensagens detalhadas no Console")]
         [Tooltip("Ativa mensagens detalhadas no Console da Unity.")]
         public bool debugMode = true;
 
         public bool TryValidateForSession(out string errorMessage)
         {
-            if (!HasValidGameId(gameId))
+            if (!HasValidGameId(GetResolvedGameId()))
             {
                 errorMessage =
-                    "gameId deve usar letras minúsculas, números e hífens, com até 100 caracteres.";
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(gameVersion))
-            {
-                errorMessage = "gameVersion é obrigatório.";
+                    "Informe um nome de jogo que gere um identificador válido de até 100 caracteres.";
                 return false;
             }
 
@@ -100,6 +109,23 @@ namespace LudusSDK
             return true;
         }
 
+        public string GetResolvedGameId()
+        {
+            if (!string.IsNullOrWhiteSpace(gameName))
+            {
+                return CreateGameIdFromName(gameName);
+            }
+
+            return gameId?.Trim() ?? string.Empty;
+        }
+
+        public string GetResolvedGameVersion()
+        {
+            return string.IsNullOrWhiteSpace(gameVersion)
+                ? "1.0.0"
+                : gameVersion.Trim();
+        }
+
         private static bool HasValidGameId(string value)
         {
             if (
@@ -129,6 +155,49 @@ namespace LudusSDK
             return
                 (character >= 'a' && character <= 'z') ||
                 (character >= '0' && character <= '9');
+        }
+
+        private static string CreateGameIdFromName(string value)
+        {
+            StringBuilder result = new StringBuilder();
+            bool previousWasHyphen = false;
+            string normalized = value.Trim().Normalize(
+                NormalizationForm.FormD
+            );
+
+            foreach (char character in normalized)
+            {
+                if (
+                    CharUnicodeInfo.GetUnicodeCategory(character) ==
+                    UnicodeCategory.NonSpacingMark
+                )
+                {
+                    continue;
+                }
+
+                bool isLetterOrDigit =
+                    (character >= 'a' && character <= 'z') ||
+                    (character >= 'A' && character <= 'Z') ||
+                    (character >= '0' && character <= '9');
+
+                if (isLetterOrDigit)
+                {
+                    result.Append(char.ToLowerInvariant(character));
+                    previousWasHyphen = false;
+                }
+                else if (result.Length > 0 && !previousWasHyphen)
+                {
+                    result.Append('-');
+                    previousWasHyphen = true;
+                }
+            }
+
+            if (result.Length > 0 && result[result.Length - 1] == '-')
+            {
+                result.Length--;
+            }
+
+            return result.ToString();
         }
 
         private static bool HasValidApiBaseUrl(string value)
