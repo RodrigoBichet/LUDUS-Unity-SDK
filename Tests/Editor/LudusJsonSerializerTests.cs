@@ -98,5 +98,42 @@ namespace LudusSDK.Tests
             Assert.That(serialized, Is.False);
             Assert.That(errorMessage, Does.Contain("payload inválido"));
         }
+
+        [Test]
+public void SessionLifecycle_ComDadosFicticios_EncerraEExportaJson()
+{
+    LudusSdkConfig config =
+        ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+    config.gameId = "jogo-teste";
+    config.gameVersion = "0.1.0-teste";
+
+    LudusParticipant participant = new LudusParticipant(
+        "000000000000000000000003",
+        "Estudante Fictício"
+    );
+
+    LudusSessionLifecycle lifecycle = new LudusSessionLifecycle();
+
+    bool started = lifecycle.TryStartSession(
+        config,
+        participant,
+        new LudusViewport(1280, 720, "pixel", "bottom-left"),
+        out string startError
+    );
+
+    bool ended = lifecycle.TryEndAndSerialize(
+        out string json,
+        out string endError
+    );
+
+    Object.DestroyImmediate(config);
+
+    Assert.That(started, Is.True, startError);
+    Assert.That(ended, Is.True, endError);
+    Assert.That(lifecycle.HasActiveSession, Is.False);
+    Assert.That(lifecycle.LastCompletedSession, Is.Not.Null);
+    Assert.That(json, Does.Contain("\"durationMs\":"));
+}
     }
 }
