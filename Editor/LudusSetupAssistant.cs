@@ -162,6 +162,7 @@ namespace LudusSDK.Editor
     public sealed class LudusSdkConfigEditor : UnityEditor.Editor
     {
         private static bool showAdvancedCollectionOptions;
+        private static bool showAdvancedConnectionOptions;
 
         public override void OnInspectorGUI()
         {
@@ -183,6 +184,24 @@ namespace LudusSDK.Editor
             DrawProperty("sendOnSessionEnd", "Enviar sessões para LUDUS Acompanha");
             DrawProperty("saveLocalCopyOnSessionEnd", "Salvar também uma cópia local");
             DrawDeliveryStatus();
+
+            EditorGUILayout.Space();
+            showAdvancedConnectionOptions = EditorGUILayout.Foldout(
+                showAdvancedConnectionOptions,
+                "Conexão com ambiente LUDUS (avançado)",
+                true
+            );
+
+            if (showAdvancedConnectionOptions)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.HelpBox(
+                    "Informe somente a origem da API fornecida pelo ambiente LUDUS, sem /api no final. Não informe JWT, tokens, senhas ou outras credenciais no Unity.",
+                    MessageType.Info
+                );
+                DrawProperty("apiBaseUrl", "URL da API LUDUS");
+                EditorGUI.indentLevel--;
+            }
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Coleta essencial", EditorStyles.boldLabel);

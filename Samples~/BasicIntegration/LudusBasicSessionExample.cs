@@ -6,6 +6,13 @@ public sealed class LudusBasicSessionExample : MonoBehaviour
     [Tooltip("Opcional: o SDK localiza automaticamente a base LUDUS SDK.")]
     public LudusSessionController sessionController;
 
+    [Header("Identidade fictícia para o laboratório")]
+    [Tooltip("Use apenas um studentId de aluno fictício criado para validação.")]
+    public string studentId = "000000000000000000000010";
+
+    [Tooltip("Nome exibido no JSON de teste.")]
+    public string playerId = "Estudante Fictício";
+
     private void Awake()
     {
         TryResolveSessionController();
@@ -54,8 +61,8 @@ public sealed class LudusBasicSessionExample : MonoBehaviour
         }
 
         bool started = sessionController.TryStartSession(
-            "000000000000000000000010",
-            "Estudante Fictício",
+            studentId,
+            playerId,
             out string errorMessage
         );
 
