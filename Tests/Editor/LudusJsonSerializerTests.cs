@@ -309,6 +309,165 @@ public void SessionLifecycle_ComContextoAtivo_RegistraCliqueETrajetoria()
         }
 
         [Test]
+        public void LudusSdk_ComUmaBaseAtiva_IniciaEEncerraSemReferenciaManual()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameId = "jogo-teste";
+
+            GameObject host = new GameObject("LudusSdkFacadeTeste");
+            LudusSessionController controller =
+                host.AddComponent<LudusSessionController>();
+            controller.Configure(config);
+
+            bool started = LudusSdk.TryStartSession(
+                "000000000000000000000011",
+                "Estudante Fictício",
+                out string startError
+            );
+            bool ended = LudusSdk.TryEndSession(
+                out string json,
+                out string endError
+            );
+
+            Assert.That(started, Is.True, startError);
+            Assert.That(ended, Is.True, endError);
+            Assert.That(json, Does.Contain("\"sessionId\":"));
+
+            Object.DestroyImmediate(host);
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void LudusSdk_ComDuasBasesAtivas_ExplicaOndeEstaoAsBases()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameId = "jogo-teste";
+
+            GameObject firstHost = new GameObject("BaseLudusPrimeira");
+            LudusSessionController firstController =
+                firstHost.AddComponent<LudusSessionController>();
+            firstController.Configure(config);
+
+            GameObject secondHost = new GameObject("BaseLudusSegunda");
+            LudusSessionController secondController =
+                secondHost.AddComponent<LudusSessionController>();
+            secondController.Configure(config);
+
+            bool started = LudusSdk.TryStartSession(
+                "000000000000000000000011",
+                "Estudante Fictício",
+                out string errorMessage
+            );
+
+            Assert.That(started, Is.False);
+            Assert.That(errorMessage, Does.Contain("2 bases LUDUS SDK"));
+            Assert.That(errorMessage, Does.Contain("BaseLudusPrimeira"));
+            Assert.That(errorMessage, Does.Contain("BaseLudusSegunda"));
+
+            Object.DestroyImmediate(firstHost);
+            Object.DestroyImmediate(secondHost);
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void Config_ComCenasSelecionadas_CapturaSomenteCenasMarcadas()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+            config.sceneCaptureMode = LudusSceneCaptureMode.SelectedScenes;
+            config.selectedSceneNames.Add("Atividade 1");
+            config.selectedSceneNames.Add("Atividade 3");
+
+            Assert.That(config.ShouldCaptureScene("Atividade 1"), Is.True);
+            Assert.That(config.ShouldCaptureScene("Menu"), Is.False);
+            Assert.That(config.ShouldCaptureScene("Atividade 3"), Is.True);
+
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void Config_ComCenasSelecionadasSemEscolhas_RejeitaSessao()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+            config.gameId = "jogo-teste";
+            config.sceneCaptureMode = LudusSceneCaptureMode.SelectedScenes;
+
+            bool valid = config.TryValidateForSession(out string errorMessage);
+
+            Assert.That(valid, Is.False);
+            Assert.That(errorMessage, Does.Contain("ao menos uma cena"));
+
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void SceneCoordinator_ComTodasAsCenas_IniciaRecorteAutomatico()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameId = "jogo-teste";
+
+            GameObject host = new GameObject("LudusSceneCoordinatorTeste");
+            LudusSessionController controller =
+                host.AddComponent<LudusSessionController>();
+            LudusSceneCaptureCoordinator coordinator =
+                host.AddComponent<LudusSceneCaptureCoordinator>();
+            controller.Configure(config);
+            coordinator.sessionController = controller;
+
+            bool started = controller.TryStartSession(
+                "000000000000000000000008",
+                "Estudante Fictício",
+                out string startError
+            );
+
+            coordinator.RefreshCurrentSceneCapture();
+
+            Assert.That(started, Is.True, startError);
+            Assert.That(controller.HasActiveCaptureContext, Is.True);
+
+            Object.DestroyImmediate(host);
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void SceneCoordinator_ComCenaAtivaNaoSelecionada_MantemCapturaPausada()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameId = "jogo-teste";
+            config.sceneCaptureMode = LudusSceneCaptureMode.SelectedScenes;
+            config.selectedSceneNames.Add("OutraCena");
+
+            GameObject host = new GameObject("LudusSceneCoordinatorPausadoTeste");
+            LudusSessionController controller =
+                host.AddComponent<LudusSessionController>();
+            LudusSceneCaptureCoordinator coordinator =
+                host.AddComponent<LudusSceneCaptureCoordinator>();
+            controller.Configure(config);
+            coordinator.sessionController = controller;
+
+            bool started = controller.TryStartSession(
+                "000000000000000000000009",
+                "Estudante Fictício",
+                out string startError
+            );
+
+            coordinator.RefreshCurrentSceneCapture();
+
+            Assert.That(started, Is.True, startError);
+            Assert.That(controller.HasActiveCaptureContext, Is.False);
+
+            Object.DestroyImmediate(host);
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
         public void SessionController_ComContextoAtivo_ExpõeEstadoECapturaInteração()
         {
             LudusSdkConfig config =

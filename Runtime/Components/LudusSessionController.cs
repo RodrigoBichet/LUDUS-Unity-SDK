@@ -33,10 +33,44 @@ namespace LudusSDK
 
         private void Awake()
         {
-            if (persistAcrossScenes)
+            if (!persistAcrossScenes)
             {
-                DontDestroyOnLoad(gameObject);
+                return;
             }
+
+            LudusSessionController persistentController =
+                FindOldestPersistentController();
+
+            if (persistentController != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            DontDestroyOnLoad(gameObject);
+        }
+
+        private LudusSessionController FindOldestPersistentController()
+        {
+            LudusSessionController[] controllers =
+                FindObjectsByType<LudusSessionController>(
+                    FindObjectsInactive.Exclude,
+                    FindObjectsSortMode.None
+                );
+            LudusSessionController oldest = this;
+
+            foreach (LudusSessionController current in controllers)
+            {
+                if (
+                    current.persistAcrossScenes &&
+                    current.GetInstanceID() < oldest.GetInstanceID()
+                )
+                {
+                    oldest = current;
+                }
+            }
+
+            return oldest;
         }
 
         public void Configure(LudusSdkConfig sdkConfig)

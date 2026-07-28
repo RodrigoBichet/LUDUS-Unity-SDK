@@ -1,10 +1,17 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using UnityEngine;
 
 namespace LudusSDK
 {
+    public enum LudusSceneCaptureMode
+    {
+        AllScenes,
+        SelectedScenes,
+    }
+
     [CreateAssetMenu(
         fileName = "LudusSdkConfig",
         menuName = "LUDUS/Configuração do SDK",
@@ -45,6 +52,17 @@ namespace LudusSDK
         [InspectorName("Nome da pasta local")]
         [Tooltip("Pasta relativa ao persistentDataPath usada pelo fallback.")]
         public string fallbackFolderName = "ludus_offline";
+
+        [Header("Cenas acompanhadas")]
+
+        [InspectorName("Onde capturar automaticamente")]
+        [Tooltip("Define se a coleta automática acompanha todas as cenas ou somente as cenas escolhidas.")]
+        public LudusSceneCaptureMode sceneCaptureMode =
+            LudusSceneCaptureMode.AllScenes;
+
+        [InspectorName("Cenas selecionadas")]
+        [Tooltip("Nomes das cenas que terão captura automática quando o modo selecionado estiver ativo.")]
+        public List<string> selectedSceneNames = new List<string>();
 
         [Header("Coleta")]
 
@@ -105,8 +123,48 @@ namespace LudusSDK
                 return false;
             }
 
+            if (
+                sceneCaptureMode == LudusSceneCaptureMode.SelectedScenes &&
+                (selectedSceneNames == null || selectedSceneNames.Count == 0)
+            )
+            {
+                errorMessage =
+                    "Selecione ao menos uma cena para usar a captura somente em cenas selecionadas.";
+                return false;
+            }
+
             errorMessage = string.Empty;
             return true;
+        }
+
+        public bool ShouldCaptureScene(string sceneName)
+        {
+            if (sceneCaptureMode == LudusSceneCaptureMode.AllScenes)
+            {
+                return true;
+            }
+
+            if (
+                string.IsNullOrWhiteSpace(sceneName) ||
+                selectedSceneNames == null
+            )
+            {
+                return false;
+            }
+
+            foreach (string selectedSceneName in selectedSceneNames)
+            {
+                if (string.Equals(
+                    selectedSceneName,
+                    sceneName,
+                    StringComparison.Ordinal
+                ))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public string GetResolvedGameId()

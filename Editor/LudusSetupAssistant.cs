@@ -7,7 +7,7 @@ namespace LudusSDK.Editor
 {
     public static class LudusSetupAssistant
     {
-        [MenuItem("GameObject/LUDUS/Criar base de coleta", false, 10)]
+        [MenuItem("GameObject/LUDUS/Adicionar coleta ao meu jogo", false, 10)]
         private static void CreateCaptureBase()
         {
             LudusSdkConfig config = CreateGameConfig();
@@ -18,10 +18,14 @@ namespace LudusSDK.Editor
                 root.AddComponent<LudusSessionController>();
             LudusSessionExporter exporter =
                 root.AddComponent<LudusSessionExporter>();
+            LudusSceneCaptureCoordinator sceneCoordinator =
+                root.AddComponent<LudusSceneCaptureCoordinator>();
 
             controller.config = config;
+            controller.persistAcrossScenes = true;
             AddPreferredPointerTracker(root, controller);
             exporter.sessionController = controller;
+            sceneCoordinator.sessionController = controller;
 
             Selection.activeGameObject = root;
             EditorGUIUtility.PingObject(root);
@@ -204,6 +208,11 @@ namespace LudusSDK.Editor
             }
 
             EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Cenas acompanhadas", EditorStyles.boldLabel);
+            DrawProperty("sceneCaptureMode", "Capturar automaticamente em");
+            DrawSceneSelection();
+
+            EditorGUILayout.Space();
             EditorGUILayout.LabelField("Coleta essencial", EditorStyles.boldLabel);
             SerializedProperty capabilities =
                 serializedObject.FindProperty("capabilities");
@@ -259,6 +268,116 @@ namespace LudusSDK.Editor
                 serializedObject.FindProperty(propertyName),
                 new GUIContent(label)
             );
+        }
+
+        private void DrawSceneSelection()
+        {
+            SerializedProperty sceneCaptureMode =
+                serializedObject.FindProperty("sceneCaptureMode");
+
+            if (
+                sceneCaptureMode.enumValueIndex !=
+                (int)LudusSceneCaptureMode.SelectedScenes
+            )
+            {
+                EditorGUILayout.HelpBox(
+                    "O SDK cria automaticamente um recorte para cada cena ativa e registra mouse/cliques em todas elas.",
+                    MessageType.Info
+                );
+                return;
+            }
+
+            SerializedProperty selectedSceneNames =
+                serializedObject.FindProperty("selectedSceneNames");
+            EditorGUILayout.HelpBox(
+                "Marque as cenas do Build Profile que devem ser acompanhadas. Nas demais cenas, o SDK mantém a sessão ativa, mas pausa mouse e cliques.",
+                MessageType.Info
+            );
+
+            EditorBuildSettingsScene[] buildScenes =
+                EditorBuildSettings.scenes;
+            bool hasEnabledScene = false;
+
+            foreach (EditorBuildSettingsScene buildScene in buildScenes)
+            {
+                if (!buildScene.enabled)
+                {
+                    continue;
+                }
+
+                hasEnabledScene = true;
+                string sceneName = System.IO.Path.GetFileNameWithoutExtension(
+                    buildScene.path
+                );
+                bool selected = ContainsSceneName(selectedSceneNames, sceneName);
+                bool nextSelected = EditorGUILayout.ToggleLeft(
+                    sceneName,
+                    selected
+                );
+
+                if (nextSelected != selected)
+                {
+                    SetSceneSelected(
+                        selectedSceneNames,
+                        sceneName,
+                        nextSelected
+                    );
+                }
+            }
+
+            if (!hasEnabledScene)
+            {
+                EditorGUILayout.HelpBox(
+                    "Adicione cenas ao Build Profile para selecioná-las aqui.",
+                    MessageType.Warning
+                );
+            }
+        }
+
+        private static bool ContainsSceneName(
+            SerializedProperty sceneNames,
+            string sceneName
+        )
+        {
+            for (int index = 0; index < sceneNames.arraySize; index++)
+            {
+                if (sceneNames.GetArrayElementAtIndex(index).stringValue == sceneName)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void SetSceneSelected(
+            SerializedProperty sceneNames,
+            string sceneName,
+            bool selected
+        )
+        {
+            for (int index = sceneNames.arraySize - 1; index >= 0; index--)
+            {
+                if (sceneNames.GetArrayElementAtIndex(index).stringValue != sceneName)
+                {
+                    continue;
+                }
+
+                if (!selected)
+                {
+                    sceneNames.DeleteArrayElementAtIndex(index);
+                }
+
+                return;
+            }
+
+            if (selected)
+            {
+                sceneNames.arraySize++;
+                sceneNames.GetArrayElementAtIndex(
+                    sceneNames.arraySize - 1
+                ).stringValue = sceneName;
+            }
         }
 
         private static void DrawCapability(
@@ -392,6 +511,18 @@ namespace LudusSDK.Editor
             EditorGUILayout.PropertyField(
                 serializedObject.FindProperty(propertyName),
                 new GUIContent(label)
+            );
+        }
+    }
+
+    [CustomEditor(typeof(LudusSceneCaptureCoordinator))]
+    public sealed class LudusSceneCaptureCoordinatorEditor : UnityEditor.Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            EditorGUILayout.HelpBox(
+                "Este componente acompanha automaticamente a cena ativa. Configure no asset LUDUS se a coleta vale para todas as cenas ou somente para as selecionadas.",
+                MessageType.Info
             );
         }
     }

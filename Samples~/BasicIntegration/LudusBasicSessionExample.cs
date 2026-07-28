@@ -60,7 +60,7 @@ public sealed class LudusBasicSessionExample : MonoBehaviour
             return;
         }
 
-        bool started = sessionController.TryStartSession(
+        bool started = LudusSdk.TryStartSession(
             studentId,
             playerId,
             out string errorMessage
@@ -72,16 +72,9 @@ public sealed class LudusBasicSessionExample : MonoBehaviour
             return;
         }
 
-        bool contextStarted = sessionController.TryBeginCaptureContext(
-            "Atividade de teste",
-            "activity",
-            "Validação fictícia da integração do SDK.",
-            out string contextError
+        Debug.Log(
+            "[LUDUS] Sessão fictícia iniciada. A cena ativa será acompanhada automaticamente."
         );
-
-        Debug.Log(contextStarted
-            ? "[LUDUS] Sessão e recorte fictícios iniciados."
-            : "[LUDUS] Sessão iniciada, mas o recorte falhou: " + contextError);
     }
 
     [ContextMenu("LUDUS/Encerrar sessão e exibir JSON")]
@@ -95,7 +88,7 @@ public sealed class LudusBasicSessionExample : MonoBehaviour
             return;
         }
 
-        bool ended = sessionController.TryEndAndSerialize(
+        bool ended = LudusSdk.TryEndSession(
             out string json,
             out string errorMessage
         );
