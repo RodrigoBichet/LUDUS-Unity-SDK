@@ -1,31 +1,64 @@
 using System;
 using LudusSDK;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace LudusSDK.Editor
 {
     public static class LudusSetupAssistant
     {
+        private const string TutorialFolderPath = "Assets/LUDUS/Tutorial";
+        private const string TutorialScenePath =
+            TutorialFolderPath + "/TutorialLudus.unity";
+
+        [MenuItem("LUDUS/Criar tutorial de teste do SDK", false, 10)]
+        private static void CreateTutorialScene()
+        {
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(TutorialScenePath) != null)
+            {
+                bool openExisting = EditorUtility.DisplayDialog(
+                    "Tutorial LUDUS",
+                    "A cena tutorial já existe em Assets/LUDUS/Tutorial. Deseja abri-la?",
+                    "Abrir tutorial",
+                    "Cancelar"
+                );
+
+                if (openExisting)
+                {
+                    EditorSceneManager.OpenScene(TutorialScenePath);
+                }
+
+                return;
+            }
+
+            EnsureFolder(TutorialFolderPath);
+            Scene tutorialScene = EditorSceneManager.NewScene(
+                NewSceneSetup.EmptyScene,
+                NewSceneMode.Single
+            );
+            LudusSdkConfig config = CreateTutorialConfig();
+            GameObject root = CreateConfiguredCaptureBase(config);
+            root.name = "LUDUS SDK — Tutorial";
+            root.AddComponent<LudusTutorialTestPanel>();
+
+            EditorSceneManager.SaveScene(tutorialScene, TutorialScenePath);
+            Selection.activeGameObject = root;
+            EditorGUIUtility.PingObject(root);
+            EditorUtility.DisplayDialog(
+                "Tutorial LUDUS",
+                "Cena criada. Pressione Play e use os botões para testar a coleta sem alterar o seu jogo.",
+                "Entendi"
+            );
+        }
+
         [MenuItem("GameObject/LUDUS/Adicionar coleta ao meu jogo", false, 10)]
         private static void CreateCaptureBase()
         {
             LudusSdkConfig config = CreateGameConfig();
-            GameObject root = new GameObject("LUDUS SDK");
+            GameObject root = CreateConfiguredCaptureBase(config);
             Undo.RegisterCreatedObjectUndo(root, "Criar base de coleta LUDUS");
-
-            LudusSessionController controller =
-                root.AddComponent<LudusSessionController>();
-            LudusSessionExporter exporter =
-                root.AddComponent<LudusSessionExporter>();
-            LudusSceneCaptureCoordinator sceneCoordinator =
-                root.AddComponent<LudusSceneCaptureCoordinator>();
-
-            controller.config = config;
-            controller.persistAcrossScenes = true;
-            AddPreferredPointerTracker(root, controller);
-            exporter.sessionController = controller;
-            sceneCoordinator.sessionController = controller;
 
             Selection.activeGameObject = root;
             EditorGUIUtility.PingObject(root);
@@ -120,10 +153,7 @@ namespace LudusSDK.Editor
         {
             const string folderPath = "Assets/LUDUS";
 
-            if (!AssetDatabase.IsValidFolder(folderPath))
-            {
-                AssetDatabase.CreateFolder("Assets", "LUDUS");
-            }
+            EnsureFolder(folderPath);
 
             string assetPath = AssetDatabase.GenerateUniqueAssetPath(
                 folderPath + "/ConfiguracaoLudus.asset"
@@ -134,6 +164,62 @@ namespace LudusSDK.Editor
             AssetDatabase.CreateAsset(config, assetPath);
             AssetDatabase.SaveAssets();
             return config;
+        }
+
+        private static LudusSdkConfig CreateTutorialConfig()
+        {
+            string assetPath = TutorialFolderPath + "/ConfiguracaoTutorialLudus.asset";
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+            config.gameName = "Tutorial LUDUS";
+            config.sceneCaptureMode = LudusSceneCaptureMode.AllScenes;
+            config.sendOnSessionEnd = false;
+            config.saveLocalCopyOnSessionEnd = true;
+            config.enableLocalFallback = true;
+            config.debugMode = true;
+
+            AssetDatabase.CreateAsset(config, assetPath);
+            AssetDatabase.SaveAssets();
+            return config;
+        }
+
+        private static GameObject CreateConfiguredCaptureBase(
+            LudusSdkConfig config
+        )
+        {
+            GameObject root = new GameObject("LUDUS SDK");
+            LudusSessionController controller =
+                root.AddComponent<LudusSessionController>();
+            LudusSessionExporter exporter =
+                root.AddComponent<LudusSessionExporter>();
+            LudusSceneCaptureCoordinator sceneCoordinator =
+                root.AddComponent<LudusSceneCaptureCoordinator>();
+
+            controller.config = config;
+            controller.persistAcrossScenes = true;
+            AddPreferredPointerTracker(root, controller);
+            exporter.sessionController = controller;
+            sceneCoordinator.sessionController = controller;
+            return root;
+        }
+
+        private static void EnsureFolder(string folderPath)
+        {
+            string[] pathParts = folderPath.Split('/');
+            string currentPath = pathParts[0];
+
+            for (int index = 1; index < pathParts.Length; index++)
+            {
+                string nextPath = currentPath + "/" + pathParts[index];
+
+                if (!AssetDatabase.IsValidFolder(nextPath))
+                {
+                    AssetDatabase.CreateFolder(currentPath, pathParts[index]);
+                }
+
+                currentPath = nextPath;
+            }
         }
     }
 

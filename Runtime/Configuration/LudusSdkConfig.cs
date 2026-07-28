@@ -8,7 +8,10 @@ namespace LudusSDK
 {
     public enum LudusSceneCaptureMode
     {
+        [InspectorName("Todas as cenas")]
         AllScenes,
+
+        [InspectorName("Somente cenas selecionadas")]
         SelectedScenes,
     }
 
