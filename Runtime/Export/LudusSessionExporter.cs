@@ -58,7 +58,40 @@ namespace LudusSDK
                 return;
             }
 
+            LudusSdkConfig config = sessionController.Config;
+
+            if (config.downloadJsonOnSessionEnd)
+            {
+                RequestWebGlDownload(config, session.sessionId, json);
+            }
+
             StartCoroutine(ExportSession(session, json));
+        }
+
+        private static void RequestWebGlDownload(
+            LudusSdkConfig config,
+            string sessionId,
+            string json
+        )
+        {
+            if (LudusWebGlJsonDownload.TryDownload(
+                sessionId,
+                json,
+                out string errorMessage
+            ))
+            {
+                Log(
+                    config,
+                    "Download do arquivo JSON solicitado ao navegador."
+                );
+                return;
+            }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            Debug.LogWarning("[LUDUS] " + errorMessage);
+#else
+            Log(config, errorMessage);
+#endif
         }
 
         private IEnumerator ExportSession(LudusSession session, string json)

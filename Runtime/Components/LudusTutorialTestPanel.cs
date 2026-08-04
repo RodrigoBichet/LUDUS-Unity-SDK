@@ -8,8 +8,15 @@ namespace LudusSDK
     /// </summary>
     public sealed class LudusTutorialTestPanel : MonoBehaviour
     {
-        private const string StudentId = "000000000000000000000001";
-        private const string PlayerId = "Estudante Fictício";
+        [Header("Identidade fictícia do tutorial")]
+
+        [InspectorName("ID do estudante fictício")]
+        [Tooltip("Use somente um aluno fictício criado para validação. Nunca informe dados reais neste painel.")]
+        public string studentId = "000000000000000000000001";
+
+        [InspectorName("Nome de exibição fictício")]
+        [Tooltip("Nome usado apenas na sessão de demonstração.")]
+        public string playerId = "Estudante Fictício";
 
         private string statusMessage =
             "Pronto para iniciar uma sessão fictícia.";
@@ -64,8 +71,8 @@ namespace LudusSDK
             }
 
             bool started = LudusSdk.TryStartSession(
-                StudentId,
-                PlayerId,
+                studentId,
+                playerId,
                 out string startError
             );
             statusMessage = started

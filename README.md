@@ -69,8 +69,8 @@ Assets/LUDUS/Tutorial/
 
 A cena contém uma base LUDUS e um painel visível somente no tutorial, com os
 botões **Iniciar sessão fictícia** e **Encerrar sessão e exibir JSON**. Ela usa
-uma identidade fictícia e salva a sessão localmente; não altera as cenas do
-jogo.
+uma identidade fictícia, salva a sessão localmente e, no WebGL, baixa um JSON
+de demonstração; não altera as cenas do jogo.
 
 Para validar no Editor:
 
@@ -84,6 +84,10 @@ Para validar no Editor:
 Para validar no WebGL, adicione `TutorialLudus` ao Build Profile como primeira
 cena habilitada e use **Build And Run**. O JSON deve mostrar
 `"platform":"WebGLPlayer"`.
+
+Se quiser validar também a importação no Dashboard, informe no Inspector do
+painel tutorial o ID de um estudante **fictício** já criado no ambiente
+demonstrativo. O ID deve corresponder ao aluno escolhido no Dashboard.
 
 > O painel do tutorial não é adicionado à integração real. Ele existe apenas
 > para aprender e validar o pacote sem poluir a interface do jogo.
@@ -190,6 +194,10 @@ Use apenas a origem, sem `/api` no final.
 - **Enviar sessões para LUDUS Acompanha** envia ao encerrar, quando existe URL.
 - **Salvar também uma cópia local** mantém um arquivo local mesmo se o envio
   funcionar.
+- **Baixar arquivo JSON ao encerrar (WebGL)** solicita um download normal no
+  navegador, pronto para a importação manual no Dashboard. A pasta de destino
+  é definida pelo navegador e pelo sistema operacional, portanto funciona em
+  Windows, macOS e Linux.
 - Se não houver URL, internet ou resposta válida, o fallback local é usado
   automaticamente quando habilitado.
 
@@ -200,6 +208,16 @@ No WebGL, o fallback aparece em um caminho semelhante a:
 ```
 
 Esse caminho representa o armazenamento local do navegador.
+
+Para importar manualmente uma sessão WebGL, marque a opção de baixar JSON,
+encerre a sessão e use o arquivo `ludus-session-<id>.json` em:
+
+```text
+Dashboard > Perfil do aluno > Importar JSON > Validar prévia > Confirmar importação
+```
+
+O aluno escolhido no Dashboard deve corresponder ao `studentId` usado pelo
+jogo. O Dashboard valida o arquivo e impede duplicação antes de gravar.
 
 Não coloque JWT de usuário no Unity. O endpoint direto de telemetria permanece
 sem JWT por compatibilidade nesta etapa; uma credencial específica do SDK será

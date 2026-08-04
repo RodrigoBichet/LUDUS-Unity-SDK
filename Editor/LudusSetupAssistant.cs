@@ -176,6 +176,7 @@ namespace LudusSDK.Editor
             config.sceneCaptureMode = LudusSceneCaptureMode.AllScenes;
             config.sendOnSessionEnd = false;
             config.saveLocalCopyOnSessionEnd = true;
+            config.downloadJsonOnSessionEnd = true;
             config.enableLocalFallback = true;
             config.debugMode = true;
 
@@ -272,7 +273,14 @@ namespace LudusSDK.Editor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Envio e cópia local", EditorStyles.boldLabel);
             DrawProperty("sendOnSessionEnd", "Enviar sessões para LUDUS Acompanha");
-            DrawProperty("saveLocalCopyOnSessionEnd", "Salvar também uma cópia local");
+            DrawProperty(
+                "saveLocalCopyOnSessionEnd",
+                "Guardar também uma cópia de segurança local"
+            );
+            DrawProperty(
+                "downloadJsonOnSessionEnd",
+                "Baixar arquivo JSON ao encerrar (WebGL)"
+            );
             DrawDeliveryStatus();
 
             EditorGUILayout.Space();
@@ -484,6 +492,8 @@ namespace LudusSDK.Editor
                 serializedObject.FindProperty("sendOnSessionEnd").boolValue;
             bool saveLocalCopy =
                 serializedObject.FindProperty("saveLocalCopyOnSessionEnd").boolValue;
+            bool downloadJson =
+                serializedObject.FindProperty("downloadJsonOnSessionEnd").boolValue;
 
             if (!sendToPlatform && !saveLocalCopy)
             {
@@ -497,18 +507,27 @@ namespace LudusSDK.Editor
             if (!sendToPlatform)
             {
                 EditorGUILayout.HelpBox(
-                    "A sessão ficará apenas na cópia local. O envio para LUDUS Acompanha está desativado.",
+                    "A sessão não será enviada automaticamente. A cópia de segurança local não é um arquivo em Downloads; no WebGL, marque a opção de baixar JSON se quiser importá-lo manualmente no Dashboard.",
                     MessageType.Info
                 );
-                return;
+            }
+            else
+            {
+                EditorGUILayout.HelpBox(
+                    saveLocalCopy
+                        ? "A sessão será enviada à plataforma e uma cópia de segurança local será preservada."
+                        : "A sessão será enviada à plataforma. Se o envio falhar, o SDK guardará um fallback local automaticamente.",
+                    MessageType.Info
+                );
             }
 
-            EditorGUILayout.HelpBox(
-                saveLocalCopy
-                    ? "A sessão será enviada à plataforma e uma cópia local será preservada."
-                    : "A sessão será enviada à plataforma. Se o envio falhar, o SDK guardará um fallback local automaticamente.",
-                MessageType.Info
-            );
+            if (downloadJson)
+            {
+                EditorGUILayout.HelpBox(
+                    "No WebGL, o navegador baixará um arquivo .json normal ao encerrar a sessão. A pasta é definida pelo navegador e sistema operacional; isso não substitui o fallback local.",
+                    MessageType.Info
+                );
+            }
         }
     }
 

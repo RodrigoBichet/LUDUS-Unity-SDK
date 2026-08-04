@@ -46,6 +46,12 @@ namespace LudusSDK
         [Tooltip("Mantém uma cópia local mesmo quando o envio for bem-sucedido.")]
         public bool saveLocalCopyOnSessionEnd;
 
+        [Header("Importação manual")]
+
+        [InspectorName("Baixar arquivo JSON ao encerrar (WebGL)")]
+        [Tooltip("Pede ao navegador para baixar um arquivo JSON normal, pronto para importação manual no LUDUS Acompanha. Não substitui a cópia local de segurança.")]
+        public bool downloadJsonOnSessionEnd;
+
         [Header("Fallback offline")]
 
         [InspectorName("Guardar cópia local se necessário")]
