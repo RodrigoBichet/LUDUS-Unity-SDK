@@ -1,112 +1,276 @@
 # LUDUS Unity SDK
 
-SDK plugável para registrar telemetria de jogos educacionais Unity e gerar sessões compatíveis com a plataforma LUDUS Acompanha.
+SDK plugável para registrar telemetria de jogos educacionais Unity e gerar
+sessões compatíveis com a plataforma **LUDUS Acompanha**.
 
-O SDK oferece evidências parciais para acompanhamento e mediação docente. Ele não faz diagnóstico, classificação clínica ou avaliação conclusiva de aprendizagem.
+O LUDUS Acompanha oferece evidências parciais para acompanhamento e mediação
+docente. Ele não diagnostica, classifica clinicamente nem produz avaliação
+conclusiva de aprendizagem.
 
-> Projeto em evolução. A API pública e o processo de integração podem mudar antes da primeira versão estável.
+> O SDK está em evolução. Antes de usar em coleta real, valide a integração
+> com identidades fictícias, o fluxo do jogo e o build WebGL.
 
-## O que ele faz
+## O que o SDK faz
 
 - inicia e encerra sessões no contrato LUDUS;
 - registra cliques e trajetória do mouse quando habilitados;
-- delimita recortes de observação por objetos ativos;
+- acompanha cenas automaticamente;
+- permite recortes extras por Canvas, painel ou atividade;
 - gera um JSON por sessão;
-- pode enviar para `POST /api/sessions` ou salvar fallback local.
+- envia para `POST /api/sessions` quando há ambiente configurado;
+- preserva fallback local quando está offline ou o envio falha.
 
-O SDK não infere acertos, erros, fases ou objetivos: cada jogo informa suas próprias regras e eventos semânticos.
+O SDK **não** interpreta regras pedagógicas do jogo. Acertos, erros, fases,
+categorias e objetivos devem ser informados pelo próprio jogo, quando houver.
 
-## Instalação local
+## Requisitos
 
-No projeto Unity consumidor, abra `Packages/manifest.json` e inclua uma referência local:
+- Unity 6;
+- acesso ao repositório GitHub do pacote;
+- projeto configurado para o alvo que pretende publicar, especialmente WebGL.
 
-```json
-{
-  "dependencies": {
-    "br.edu.ufpel.ludus.sdk": "file:../LUDUS-Unity-SDK"
-  }
-}
+O pacote usa o novo Input System quando ele está presente no projeto e o Input
+clássico como alternativa. Não é necessário alterar `ProjectSettings` para a
+integração básica.
+
+## Instalação pelo GitHub
+
+No projeto Unity que receberá o SDK:
+
+1. Abra **Window > Package Manager**.
+2. Clique no botão **+**.
+3. Escolha **Install package from git URL...**.
+4. Informe:
+
+   ```text
+   https://github.com/RodrigoBichet/LUDUS-Unity-SDK.git#main
+   ```
+
+5. Aguarde a Unity importar o pacote.
+
+Se o repositório estiver privado, a conta GitHub configurada no computador deve
+ter acesso a ele. Não inclua tokens, senhas ou chaves em arquivos Unity.
+
+## Primeiro teste: tutorial isolado
+
+Antes de tocar no jogo, crie uma cena de demonstração separada:
+
+```text
+LUDUS > Criar tutorial de teste do SDK
 ```
 
-Alternativamente, use **Window > Package Manager > + > Add package from disk** e selecione o `package.json` deste repositório.
+O comando cria:
 
-## Integração mínima
+```text
+Assets/LUDUS/Tutorial/
+├── ConfiguracaoTutorialLudus.asset
+└── TutorialLudus.unity
+```
 
-### 1. Crie a base de coleta
+A cena contém uma base LUDUS e um painel visível somente no tutorial, com os
+botões **Iniciar sessão fictícia** e **Encerrar sessão e exibir JSON**. Ela usa
+uma identidade fictícia e salva a sessão localmente; não altera as cenas do
+jogo.
 
-Use **GameObject > LUDUS > Criar base de coleta**. O SDK cria um GameObject `LUDUS SDK`, adiciona os componentes necessários, conecta automaticamente o rastreador e o exportador ao controlador e cria uma configuração em `Assets/LUDUS/ConfiguracaoLudus.asset`.
+Para validar no Editor:
 
-Selecione esse arquivo no painel Project e informe o **Nome do jogo**, como `Meu Jogo Educacional`. O SDK gera internamente o `gameId` técnico exigido pelo contrato e usa a versão `1.0.0` até uma edição futura do jogo ser distribuída.
+1. Abra `Assets/LUDUS/Tutorial/TutorialLudus.unity`.
+2. Pressione **Play**.
+3. Clique em **Iniciar sessão fictícia**.
+4. Mova o mouse e faça alguns cliques na Game View.
+5. Clique em **Encerrar sessão e exibir JSON**.
+6. Confira o JSON no Console e a cópia local em `ludus_offline`.
 
-Não coloque JWT, senha ou credencial de usuário nesse asset.
+Para validar no WebGL, adicione `TutorialLudus` ao Build Profile como primeira
+cena habilitada e use **Build And Run**. O JSON deve mostrar
+`"platform":"WebGLPlayer"`.
 
-Se o projeto possuir o pacote **Input System**, a base escolhe automaticamente o coletor compatível com ele. Caso contrário, usa o coletor clássico da Unity. Não é preciso alterar ProjectSettings nem adicionar os dois coletores.
+> O painel do tutorial não é adicionado à integração real. Ele existe apenas
+> para aprender e validar o pacote sem poluir a interface do jogo.
 
-No Editor, alguns layouts podem encaminhar o mouse para a própria interface da Unity. O SDK usa uma rota de compatibilidade para o laboratório quando isso ocorrer. Essa particularidade não é uma etapa de integração nem uma exigência para o build WebGL.
+## Integração no jogo real
 
-### 2. Delimite o recorte observado
+### 1. Adicione a base LUDUS
 
-Adicione `LudusCaptureContextTrigger` ao Canvas, painel ou objeto-raiz desejado. Preencha:
+Abra a cena inicial do jogo e use:
 
-- **Título apresentado ao professor no dashboard**;
-- **Tipo geral**: Scene, Canvas, Activity ou Other;
-- **Objetivo observacional ou pedagógico**, se houver.
+```text
+GameObject > LUDUS > Adicionar coleta ao meu jogo
+```
 
-Enquanto o objeto estiver ativo em uma sessão, o SDK registra dados brutos. Ao desativá-lo, o contexto é encerrado. Para informar o controlador, arraste o GameObject `LUDUS SDK` criado no passo anterior. O identificador técnico é criado internamente; o integrador não preenche `contextId`.
+O SDK cria o GameObject `LUDUS SDK`, uma configuração em `Assets/LUDUS/` e
+conecta automaticamente:
 
-### 3. Inicie e encerre pelo fluxo do jogo
+- controlador de sessão;
+- exportador;
+- coletor de mouse compatível;
+- coordenador de captura por cenas.
 
-Quando o jogo já souber quem está jogando, chame o controlador:
+A base permanece ativa ao trocar de cena. Caso a cena inicial seja carregada
+novamente, o SDK preserva a base original e evita uma duplicação de sessão.
+
+### 2. Configure o jogo e as cenas
+
+No painel **Project**, selecione o asset criado em `Assets/LUDUS/` e preencha:
+
+- **Nome do jogo**, por exemplo `Historietas Divertidas`;
+- **Capturar automaticamente em**:
+  - **Todas as cenas**, para acompanhar o jogo inteiro;
+  - **Somente cenas selecionadas**, para registrar apenas cenas marcadas no
+    Build Profile.
+
+No modo de cenas selecionadas, marque as cenas de atividade. Nas demais, a
+sessão continua ativa, mas mouse e cliques ficam pausados. Ao voltar para uma
+cena marcada, a coleta retoma automaticamente.
+
+O nome técnico `gameId` é gerado internamente a partir do nome do jogo. Não é
+necessário preenchê-lo.
+
+### 3. Inicie e encerre no fluxo do jogo
+
+O jogo é quem sabe quando um estudante foi identificado e quando a atividade
+terminou. Conecte estes dois momentos ao fluxo existente do jogo:
 
 ```csharp
 using LudusSDK;
 using UnityEngine;
 
-public sealed class MeuFluxoDoJogo : MonoBehaviour
+public sealed class MeuFluxoLudus : MonoBehaviour
 {
-    [SerializeField] private LudusSessionController ludus;
-
-    public void IniciarParaAluno(string studentId, string playerId)
+    public void IniciarSessao(string studentId, string playerId)
     {
-        if (!ludus.TryStartSession(studentId, playerId, out string erro))
+        if (!LudusSdk.TryStartSession(studentId, playerId, out string erro))
         {
             Debug.LogError("[LUDUS] " + erro);
         }
     }
 
-    public void EncerrarAtividade()
+    public void EncerrarSessao()
     {
-        if (ludus.TryEndAndSerialize(out string json, out string erro))
+        if (!LudusSdk.TryEndSession(out string json, out string erro))
         {
-            Debug.Log("[LUDUS] Sessão finalizada: " + json);
+            Debug.LogError("[LUDUS] " + erro);
             return;
         }
 
-        Debug.LogError("[LUDUS] " + erro);
+        Debug.Log("[LUDUS] Sessão encerrada: " + json);
     }
 }
 ```
 
-`studentId` deve vir do fluxo seguro já existente no jogo ou plataforma. Não fixe identificadores reais em scripts, cenas, prefabs ou exemplos.
+Chame `IniciarSessao` depois de identificar o estudante e antes da primeira
+cena acompanhada. Chame `EncerrarSessao` quando a atividade for concluída,
+cancelada ou quando o fluxo pedagógico determinar o fim da sessão.
 
-## Exportação e fallback
+`studentId` é o vínculo canônico com o aluno no Dashboard. `playerId` é o nome
+de exibição. Nunca fixe identificadores reais em scripts, cenas, prefabs,
+exemplos ou testes.
 
-Com `LudusSessionExporter` configurado, a opção **Enviar sessões para LUDUS Acompanha** controla o envio à plataforma. A URL da API não é algo que o integrador comum deve preencher: ela será fornecida pela distribuição oficial/ambiente da plataforma. Enquanto essa conexão não estiver configurada, o SDK usa fallback local.
+### 4. Recortes extras por Canvas ou painel (opcional)
 
-A opção **Salvar também uma cópia local** cria um arquivo local mesmo quando o envio for bem-sucedido. Independentemente dessa opção, uma falha de envio também gera fallback local.
+A captura por cena cobre o caso comum. Quando uma mesma cena possui vários
+recortes relevantes, adicione `LudusCaptureContextTrigger` ao Canvas, painel
+ou objeto-raiz desejado.
 
-O endpoint direto de telemetria não recebe JWT nesta etapa por compatibilidade. Testes de envio devem usar backend local e identidade fictícia; nunca dados reais ou MongoDB Atlas.
+No Inspector, preencha em linguagem do seu jogo:
 
-## Amostra de laboratório
+- **Título exibido no acompanhamento**;
+- **Tipo deste recorte**;
+- **Objetivo deste recorte**.
 
-No Package Manager, importe a amostra **Integração Básica**. Ela contém um componente com identidade fictícia e botões visíveis na aba Game para iniciar e encerrar o ensaio. Leia `Samples~/BasicIntegration/README.md` antes de usar.
+O SDK encontra a base automaticamente. Só use a referência manual se o jogo
+tiver mais de uma base LUDUS, situação que normalmente deve ser evitada.
 
-## Validação recomendada
+## Envio, fallback e privacidade
 
-1. Execute os testes EditMode do pacote.
-2. Inicie uma sessão com identidade fictícia no laboratório.
-3. Ative um contexto — ou use a amostra, que cria um recorte fictício automaticamente —, mova o mouse e clique.
-4. Encerre e confira o JSON no Console.
-5. Teste fallback sem URL, em ambiente local controlado.
-6. Teste envio apenas contra backend local e banco temporário.
-7. Faça build WebGL antes de integrar um jogo real.
+Em **Conexão com ambiente LUDUS (avançado)**, informe a URL somente quando ela
+for fornecida pelo ambiente oficial LUDUS ou por um backend local controlado.
+Use apenas a origem, sem `/api` no final.
+
+- **Enviar sessões para LUDUS Acompanha** envia ao encerrar, quando existe URL.
+- **Salvar também uma cópia local** mantém um arquivo local mesmo se o envio
+  funcionar.
+- Se não houver URL, internet ou resposta válida, o fallback local é usado
+  automaticamente quando habilitado.
+
+No WebGL, o fallback aparece em um caminho semelhante a:
+
+```text
+/idbfs/.../ludus_offline/<sessionId>.json
+```
+
+Esse caminho representa o armazenamento local do navegador.
+
+Não coloque JWT de usuário no Unity. O endpoint direto de telemetria permanece
+sem JWT por compatibilidade nesta etapa; uma credencial específica do SDK será
+tratada separadamente.
+
+Para testes, use somente estudantes fictícios, backend local ou ambiente
+demonstrativo seguro. Nunca use dados reais, MongoDB Atlas produtivo, tokens,
+senhas ou credenciais.
+
+## Build WebGL
+
+Antes de publicar:
+
+1. Abra **File > Build Profiles**.
+2. Selecione **Web** como plataforma ativa.
+3. Confirme que as cenas corretas estão habilitadas e na ordem esperada.
+4. Execute **Build And Run**.
+5. Faça ao menos um clique, movimento, início e encerramento de sessão.
+6. Confira no Console do navegador `platform: "WebGLPlayer"` e os eventos de
+   contexto esperados.
+
+O primeiro build WebGL — e builds após mudar de plataforma — pode levar mais
+tempo porque a Unity compila e prepara os artefatos do jogador. Consulte a
+documentação oficial sobre [introdução ao processo de build](https://docs.unity3d.com/6000.0/Documentation/Manual/building-introduction.html)
+e sobre [build para Web](https://docs.unity3d.com/6000.0/Documentation/Manual/webgl-building.html).
+
+## Solução de problemas
+
+### O Console mostra aviso sobre posição do ponteiro no Editor
+
+O novo Input System pode ainda não fornecer uma posição válida no primeiro
+instante do Editor. O SDK evita registrar o ponto falso `(0,0)` e usa a Game
+View como compatibilidade. Os cliques e movimentos reais continuam sendo
+capturados.
+
+### A sessão foi salva localmente
+
+Isso é esperado no tutorial, offline, sem URL configurada ou quando o envio
+falha. Confira o JSON antes de configurar um servidor.
+
+### Foram encontradas várias bases LUDUS SDK ativas
+
+Mantenha uma base por jogo. A mensagem indica os objetos e cenas encontrados.
+Se isso ocorrer ao recarregar uma cena inicial, confirme que o pacote está
+atualizado: a base persistente deve preservar a cópia original.
+
+### A Unity não atualizou o pacote Git
+
+Abra o Package Manager, selecione **LUDUS Unity SDK** e clique em **Update**.
+Confirme também que o commit foi enviado ao GitHub e que sua conta tem acesso
+ao repositório.
+
+## Checklist antes de integrar um jogo
+
+- [ ] Pacote instalado pelo GitHub.
+- [ ] Tutorial isolado validado no Editor.
+- [ ] Tutorial isolado validado no WebGL.
+- [ ] Nome do jogo preenchido.
+- [ ] Cenas acompanhadas configuradas.
+- [ ] Início e encerramento ligados ao fluxo do jogo.
+- [ ] Apenas identidade fictícia usada nos testes.
+- [ ] JSON conferido.
+- [ ] Fallback offline conferido.
+- [ ] Build WebGL conferido.
+
+## Contrato de telemetria
+
+O SDK preserva o contrato LUDUS, incluindo `schemaVersion`, `captureMode`,
+`source`, `capabilities`, `studentId`, `playerId`, `gameId`, métricas,
+cliques, trajetórias, eventos e screenshots. O modo deste pacote é
+`"captureMode":"sdk"`.
+
+Mudanças no payload devem ser avaliadas junto do backend e Dashboard LUDUS
+Acompanha para preservar compatibilidade com sessões existentes.
