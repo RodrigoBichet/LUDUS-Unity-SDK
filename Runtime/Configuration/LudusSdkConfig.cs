@@ -52,6 +52,10 @@ namespace LudusSDK
         [Tooltip("Pede ao navegador para baixar um arquivo JSON normal, pronto para importação manual no LUDUS Acompanha. Não substitui a cópia local de segurança.")]
         public bool downloadJsonOnSessionEnd;
 
+        [InspectorName("Rótulo do arquivo (opcional)")]
+        [Tooltip("Texto curto para identificar o JSON baixado, como 'atividade-1'. Se ficar vazio, o SDK usa somente o nome do jogo e a data de encerramento.")]
+        public string downloadFileLabel = "";
+
         [Header("Fallback offline")]
 
         [InspectorName("Guardar cópia local se necessário")]

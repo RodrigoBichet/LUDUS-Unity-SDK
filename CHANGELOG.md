@@ -6,6 +6,9 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 
 ### Adicionado
 
+- Download WebGL com nome legível formado por jogo, rótulo opcional e data/hora de encerramento.
+- Fluxo de sessão para importação manual sem o integrador informar ID técnico do aluno na Unity.
+
 - Coletor opcional para o novo Input System, selecionado automaticamente ao criar a base de coleta.
 - Botões visíveis na aba Game da amostra de laboratório para iniciar e encerrar a sessão fictícia.
 

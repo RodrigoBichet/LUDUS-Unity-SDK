@@ -141,9 +141,9 @@ using UnityEngine;
 
 public sealed class MeuFluxoLudus : MonoBehaviour
 {
-    public void IniciarSessao(string studentId, string playerId)
+    public void IniciarSessaoParaImportarDepois()
     {
-        if (!LudusSdk.TryStartSession(studentId, playerId, out string erro))
+        if (!LudusSdk.TryStartSessionForManualImport("Atividade 1", out string erro))
         {
             Debug.LogError("[LUDUS] " + erro);
         }
@@ -162,13 +162,18 @@ public sealed class MeuFluxoLudus : MonoBehaviour
 }
 ```
 
-Chame `IniciarSessao` depois de identificar o estudante e antes da primeira
+Chame `IniciarSessaoParaImportarDepois` antes da primeira
 cena acompanhada. Chame `EncerrarSessao` quando a atividade for concluída,
 cancelada ou quando o fluxo pedagógico determinar o fim da sessão.
 
-`studentId` é o vínculo canônico com o aluno no Dashboard. `playerId` é o nome
-de exibição. Nunca fixe identificadores reais em scripts, cenas, prefabs,
-exemplos ou testes.
+No fluxo de importação manual, o desenvolvedor não informa `studentId` na
+Unity. O SDK usa internamente uma marca de sessão sem vínculo, e o Dashboard
+associa o JSON ao aluno escolhido na importação. Nunca fixe identificadores
+reais em scripts, cenas, prefabs, exemplos ou testes.
+
+Para envio automático à API, use `TryStartSession(studentId, playerId, ...)`
+somente quando o jogo já receber uma identidade técnica por um fluxo seguro
+externo. JWTs de usuário não pertencem ao build Unity.
 
 ### 4. Recortes extras por Canvas ou painel (opcional)
 
@@ -198,6 +203,10 @@ Use apenas a origem, sem `/api` no final.
   navegador, pronto para a importação manual no Dashboard. A pasta de destino
   é definida pelo navegador e pelo sistema operacional, portanto funciona em
   Windows, macOS e Linux.
+- **Rótulo do arquivo (opcional)** organiza o nome do download. Com o rótulo
+  `atividade 1`, por exemplo, o navegador recebe
+  `ludus-nome-do-jogo-atividade-1-2026-08-04_14-32-10.json`. Sem rótulo, o
+  SDK usa nome do jogo e data/hora de encerramento. O nome nunca inclui aluno.
 - Se não houver URL, internet ou resposta válida, o fallback local é usado
   automaticamente quando habilitado.
 
@@ -210,14 +219,16 @@ No WebGL, o fallback aparece em um caminho semelhante a:
 Esse caminho representa o armazenamento local do navegador.
 
 Para importar manualmente uma sessão WebGL, marque a opção de baixar JSON,
-encerre a sessão e use o arquivo `ludus-session-<id>.json` em:
+encerre a sessão e use o arquivo `ludus-<jogo>-<data-hora>.json` em:
 
 ```text
 Dashboard > Perfil do aluno > Importar JSON > Validar prévia > Confirmar importação
 ```
 
-O aluno escolhido no Dashboard deve corresponder ao `studentId` usado pelo
-jogo. O Dashboard valida o arquivo e impede duplicação antes de gravar.
+No Dashboard, selecione o aluno que deve receber a sessão antes de importar.
+O Dashboard registra o `studentId` canônico desse aluno, valida o arquivo e
+impede duplicação antes de gravar. Por segurança, um JSON que já tenha um
+`studentId` técnico diferente continua sendo recusado.
 
 Não coloque JWT de usuário no Unity. O endpoint direto de telemetria permanece
 sem JWT por compatibilidade nesta etapa; uma credencial específica do SDK será

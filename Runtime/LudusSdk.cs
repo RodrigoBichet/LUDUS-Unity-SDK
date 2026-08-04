@@ -5,6 +5,8 @@ namespace LudusSDK
 {
     public static class LudusSdk
     {
+        public const string StudentIdPendingManualImport = "000000000000000000000000";
+
         public static bool TryStartSession(
             string studentId,
             string playerId,
@@ -42,6 +44,22 @@ namespace LudusSDK
             }
 
             return controller.TryEndAndSerialize(out json, out errorMessage);
+        }
+
+        public static bool TryStartSessionForManualImport(
+            string sessionDisplayName,
+            out string errorMessage
+        )
+        {
+            string resolvedDisplayName = string.IsNullOrWhiteSpace(sessionDisplayName)
+                ? "Sessão sem vínculo"
+                : sessionDisplayName.Trim();
+
+            return TryStartSession(
+                StudentIdPendingManualImport,
+                resolvedDisplayName,
+                out errorMessage
+            );
         }
 
         private static bool TryGetSingleSessionController(

@@ -62,7 +62,7 @@ namespace LudusSDK
 
             if (config.downloadJsonOnSessionEnd)
             {
-                RequestWebGlDownload(config, session.sessionId, json);
+                RequestWebGlDownload(config, session, json);
             }
 
             StartCoroutine(ExportSession(session, json));
@@ -70,12 +70,12 @@ namespace LudusSDK
 
         private static void RequestWebGlDownload(
             LudusSdkConfig config,
-            string sessionId,
+            LudusSession session,
             string json
         )
         {
             if (LudusWebGlJsonDownload.TryDownload(
-                sessionId,
+                LudusWebGlJsonDownload.CreateFileName(config, session),
                 json,
                 out string errorMessage
             ))

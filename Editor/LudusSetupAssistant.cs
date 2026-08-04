@@ -281,6 +281,10 @@ namespace LudusSDK.Editor
                 "downloadJsonOnSessionEnd",
                 "Baixar arquivo JSON ao encerrar (WebGL)"
             );
+            DrawProperty(
+                "downloadFileLabel",
+                "Rótulo do arquivo (opcional)"
+            );
             DrawDeliveryStatus();
 
             EditorGUILayout.Space();
