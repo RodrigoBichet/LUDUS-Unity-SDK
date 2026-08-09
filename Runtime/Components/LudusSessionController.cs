@@ -170,6 +170,20 @@ namespace LudusSDK
             );
         }
 
+        public bool TryRecordDragPoint(
+            Vector2 position,
+            string state,
+            out string errorMessage
+        )
+        {
+            return lifecycle.TryRecordDragPoint(
+                position.x,
+                position.y,
+                state,
+                out errorMessage
+            );
+        }
+
         public bool TryEndAndSerialize(
             out string json,
             out string errorMessage

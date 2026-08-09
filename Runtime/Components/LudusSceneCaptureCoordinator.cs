@@ -10,6 +10,7 @@ namespace LudusSDK
         public LudusSessionController sessionController;
 
         private LudusCaptureContext ownedContext;
+        private string ownedSceneName;
 
         private void Awake()
         {
@@ -51,6 +52,7 @@ namespace LudusSDK
             if (!sessionController.HasActiveSession)
             {
                 ownedContext = null;
+                ownedSceneName = string.Empty;
                 return;
             }
 
@@ -69,12 +71,16 @@ namespace LudusSDK
                 return;
             }
 
-            if (ownedContext != null && sessionController.HasActiveCaptureContext)
+            if (
+                ownedContext != null &&
+                sessionController.HasActiveCaptureContext &&
+                string.Equals(ownedSceneName, sceneName, System.StringComparison.Ordinal)
+            )
             {
                 return;
             }
 
-            ownedContext = null;
+            TryEndOwnedContext();
 
             if (sessionController.HasActiveCaptureContext)
             {
@@ -93,6 +99,7 @@ namespace LudusSDK
             ))
             {
                 ownedContext = sceneContext;
+                ownedSceneName = sceneName;
             }
         }
 
@@ -105,6 +112,7 @@ namespace LudusSDK
 
             sessionController.TryEndCaptureContext(ownedContext, out _);
             ownedContext = null;
+            ownedSceneName = string.Empty;
         }
 
         private bool TryResolveSessionController()

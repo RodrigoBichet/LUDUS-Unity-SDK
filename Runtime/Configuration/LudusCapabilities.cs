@@ -14,8 +14,8 @@ namespace LudusSDK
         [Tooltip("Registra o caminho do mouse ou toque.")]
         public bool mousePath = true;
 
-        [Tooltip("Registra trajetórias de arraste quando disponíveis.")]
-        public bool dragPath = false;
+        [Tooltip("Registra automaticamente início, percurso e fim de arrastes.")]
+        public bool dragPath = true;
 
         [Tooltip("Permite capturas de imagem da sessão.")]
         public bool screenshots = false;

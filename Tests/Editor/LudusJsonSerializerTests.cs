@@ -273,6 +273,84 @@ public void SessionLifecycle_ComContextoAtivo_RegistraCliqueETrajetoria()
     Assert.That(json, Does.Contain("\"mousePath\":["));
 }
 
+[Test]
+public void SessionLifecycle_ComContextoAtivo_RegistraTrajetoriaDeArraste()
+{
+    LudusSdkConfig config =
+        ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+    config.gameId = "jogo-teste";
+    config.gameVersion = "0.1.0-teste";
+
+    LudusSessionLifecycle lifecycle = new LudusSessionLifecycle();
+
+    bool started = lifecycle.TryStartSession(
+        config,
+        new LudusParticipant(
+            "000000000000000000000015",
+            "Estudante Fictício"
+        ),
+        new LudusViewport(1280, 720, "pixel", "bottom-left"),
+        out string startError
+    );
+
+    bool contextStarted = lifecycle.TryBeginCaptureContext(
+        new LudusCaptureContext(
+            "Atividade principal",
+            "canvas",
+            "Observação de arraste"
+        ),
+        out string contextError
+    );
+
+    bool startRecorded = lifecycle.TryRecordDragPoint(
+        100f,
+        200f,
+        "start",
+        out string startDragError
+    );
+    bool moveRecorded = lifecycle.TryRecordDragPoint(
+        180f,
+        260f,
+        "move",
+        out string moveDragError
+    );
+    bool endRecorded = lifecycle.TryRecordDragPoint(
+        240f,
+        320f,
+        "end",
+        out string endDragError
+    );
+
+    bool ended = lifecycle.TryEndAndSerialize(
+        out string json,
+        out string endError
+    );
+
+    Object.DestroyImmediate(config);
+
+    Assert.That(started, Is.True, startError);
+    Assert.That(contextStarted, Is.True, contextError);
+    Assert.That(startRecorded, Is.True, startDragError);
+    Assert.That(moveRecorded, Is.True, moveDragError);
+    Assert.That(endRecorded, Is.True, endDragError);
+    Assert.That(ended, Is.True, endError);
+    Assert.That(
+        lifecycle.LastCompletedSession.dragPath.Count,
+        Is.EqualTo(3)
+    );
+    Assert.That(
+        lifecycle.LastCompletedSession.dragPath[0].state,
+        Is.EqualTo("start")
+    );
+    Assert.That(
+        lifecycle.LastCompletedSession.dragPath[2].state,
+        Is.EqualTo("end")
+    );
+    Assert.That(json, Does.Contain("\"dragPath\":["));
+    Assert.That(json, Does.Contain("\"state\":\"start\""));
+}
+
         [Test]
         public void SessionController_ComConfigFicticia_IniciaEExportaSessao()
         {
@@ -430,6 +508,64 @@ public void SessionLifecycle_ComContextoAtivo_RegistraCliqueETrajetoria()
 
             Assert.That(started, Is.True, startError);
             Assert.That(controller.HasActiveCaptureContext, Is.True);
+
+            Object.DestroyImmediate(host);
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void SceneCoordinator_ComContextoDeOutraCena_TrocaRecorteAutomatico()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameId = "jogo-teste";
+
+            GameObject host = new GameObject(
+                "LudusSceneCoordinatorTrocaTeste"
+            );
+            LudusSessionController controller =
+                host.AddComponent<LudusSessionController>();
+            LudusSceneCaptureCoordinator coordinator =
+                host.AddComponent<LudusSceneCaptureCoordinator>();
+            controller.Configure(config);
+            coordinator.sessionController = controller;
+
+            bool started = controller.TryStartSession(
+                "000000000000000000000016",
+                "Estudante Fictício",
+                out string startError
+            );
+            coordinator.RefreshCurrentSceneCapture();
+
+            System.Reflection.FieldInfo ownedSceneNameField =
+                typeof(LudusSceneCaptureCoordinator).GetField(
+                    "ownedSceneName",
+                    System.Reflection.BindingFlags.Instance |
+                    System.Reflection.BindingFlags.NonPublic
+                );
+            Assert.That(ownedSceneNameField, Is.Not.Null);
+            ownedSceneNameField.SetValue(coordinator, "Cena anterior");
+            coordinator.RefreshCurrentSceneCapture();
+
+            bool ended = controller.TryEndAndSerialize(
+                out _,
+                out string endError
+            );
+
+            Assert.That(started, Is.True, startError);
+            Assert.That(ended, Is.True, endError);
+            Assert.That(
+                controller.LastCompletedSession.gameEvents.Count,
+                Is.EqualTo(4)
+            );
+            Assert.That(
+                controller.LastCompletedSession.gameEvents[1].eventType,
+                Is.EqualTo("CaptureContextEnded")
+            );
+            Assert.That(
+                controller.LastCompletedSession.gameEvents[2].eventType,
+                Is.EqualTo("CaptureContextStarted")
+            );
 
             Object.DestroyImmediate(host);
             Object.DestroyImmediate(config);
@@ -694,7 +830,7 @@ public void SessionLifecycle_ComContextoAtivo_RegistraCliqueETrajetoria()
             Assert.That(config.capabilities.clicks, Is.True);
             Assert.That(config.capabilities.mousePath, Is.True);
             Assert.That(config.capabilities.customEvents, Is.True);
-            Assert.That(config.capabilities.dragPath, Is.False);
+            Assert.That(config.capabilities.dragPath, Is.True);
             Assert.That(config.capabilities.inactivity, Is.False);
 
             Object.DestroyImmediate(config);

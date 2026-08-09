@@ -11,6 +11,7 @@ namespace LudusSDK
         private string activeContextInstanceId;
         private const int MaxClicks = 10000;
         private const int MaxMousePathPoints = 50000;
+        private const int MaxDragPathPoints = 50000;
 
         public bool HasActiveSession => activeSession != null;
 
@@ -239,6 +240,64 @@ public bool TryRecordMousePoint(
             x = x,
             y = y,
             t = timestamp,
+        }
+    );
+
+    RegisterFirstAction(timestamp);
+
+    errorMessage = string.Empty;
+    return true;
+}
+
+public bool TryRecordDragPoint(
+    float x,
+    float y,
+    string state,
+    out string errorMessage
+)
+{
+    if (!HasActiveSession)
+    {
+        errorMessage =
+            "Não existe sessão ativa para registrar um ponto de arraste.";
+        return false;
+    }
+
+    if (
+        !TryValidateRawCapture(
+            activeSession.capabilities.dragPath,
+            "dragPath",
+            x,
+            y,
+            out errorMessage
+        )
+    )
+    {
+        return false;
+    }
+
+    if (state != "start" && state != "move" && state != "end")
+    {
+        errorMessage = "O estado do ponto de arraste é inválido.";
+        return false;
+    }
+
+    if (activeSession.dragPath.Count >= MaxDragPathPoints)
+    {
+        errorMessage =
+            "O limite de pontos de trajetória de arraste foi atingido.";
+        return false;
+    }
+
+    int timestamp = GetElapsedMilliseconds();
+
+    activeSession.dragPath.Add(
+        new LudusDragPoint
+        {
+            x = x,
+            y = y,
+            t = timestamp,
+            state = state,
         }
     );
 

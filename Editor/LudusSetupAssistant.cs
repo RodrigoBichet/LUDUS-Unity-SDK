@@ -316,6 +316,7 @@ namespace LudusSDK.Editor
                 serializedObject.FindProperty("capabilities");
             DrawCapability(capabilities, "clicks", "Cliques");
             DrawCapability(capabilities, "mousePath", "Trajetória do mouse");
+            DrawCapability(capabilities, "dragPath", "Trajetória de arraste");
             EditorGUILayout.HelpBox(
                 "Os recortes de observação por Canvas, painel ou atividade são registrados automaticamente quando você adiciona LudusCaptureContextTrigger ao objeto desejado.",
                 MessageType.None
@@ -332,10 +333,9 @@ namespace LudusSDK.Editor
             {
                 EditorGUI.indentLevel++;
                 EditorGUILayout.HelpBox(
-                    "Habilite somente recursos que já tenham sido integrados ao seu jogo. Arraste e inatividade ainda não são coletados automaticamente nesta versão.",
+                    "Habilite somente recursos que já tenham sido integrados ao seu jogo. Capturas visuais, pausas e eventos semânticos continuam opt-in nesta versão.",
                     MessageType.Warning
                 );
-                DrawCapability(capabilities, "dragPath", "Trajetória de arraste");
                 DrawCapability(capabilities, "screenshots", "Capturas de tela");
                 DrawCapability(capabilities, "inactivity", "Períodos de inatividade");
                 DrawCapability(capabilities, "focusEvents", "Mudanças de foco");

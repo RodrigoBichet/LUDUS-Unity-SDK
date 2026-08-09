@@ -6,6 +6,8 @@ namespace LudusSDK
     [AddComponentMenu("LUDUS/Coletor de mouse (novo Input System)")]
     public sealed class LudusInputSystemPointerTracker : MonoBehaviour
     {
+        private const float DragMinimumDistancePixels = 5f;
+
         [Tooltip("Opcional: a base LUDUS SDK Ã© localizada automaticamente.")]
         public LudusSessionController sessionController;
 
@@ -19,10 +21,15 @@ namespace LudusSDK
         private InputAction pointerPositionAction;
         private InputAction pointerPressAction;
         private float nextMouseSampleAt;
+        private float nextDragSampleAt;
         private bool warnedAboutUnavailablePointer;
         private bool receivedInputSystemPointer;
         private bool hasLastFallbackPointerPosition;
         private Vector2 lastFallbackPointerPosition;
+        private bool isDragging;
+        private bool hasRecordedDragStart;
+        private bool hasDragStartPosition;
+        private Vector2 dragStartPosition;
 
         private void Awake()
         {
@@ -46,20 +53,26 @@ namespace LudusSDK
                 "<Pointer>/press"
             );
 
-            pointerPressAction.performed += HandlePointerPress;
+            pointerPressAction.started += HandlePointerPressed;
+            pointerPressAction.canceled += HandlePointerReleased;
             pointerPositionAction.Enable();
             pointerPressAction.Enable();
             nextMouseSampleAt = 0f;
+            nextDragSampleAt = 0f;
             warnedAboutUnavailablePointer = false;
             receivedInputSystemPointer = false;
             hasLastFallbackPointerPosition = false;
+            isDragging = false;
+            hasRecordedDragStart = false;
+            hasDragStartPosition = false;
         }
 
         private void OnDisable()
         {
             if (pointerPressAction != null)
             {
-                pointerPressAction.performed -= HandlePointerPress;
+                pointerPressAction.started -= HandlePointerPressed;
+                pointerPressAction.canceled -= HandlePointerReleased;
                 pointerPressAction.Disable();
                 pointerPressAction.Dispose();
                 pointerPressAction = null;
@@ -76,8 +89,7 @@ namespace LudusSDK
         private void Update()
         {
             if (sessionController == null || !sessionController.HasActiveSession ||
-                !sessionController.HasActiveCaptureContext || !captureMousePath ||
-                Time.unscaledTime < nextMouseSampleAt)
+                !sessionController.HasActiveCaptureContext)
             {
                 return;
             }
@@ -87,23 +99,57 @@ namespace LudusSDK
                 return;
             }
 
-            sessionController.TryRecordMousePoint(position, out _);
+            if (captureMousePath && Time.unscaledTime >= nextMouseSampleAt)
+            {
+                sessionController.TryRecordMousePoint(position, out _);
+                nextMouseSampleAt = Time.unscaledTime +
+                    Mathf.Max(10, mouseSampleIntervalMs) / 1000f;
+            }
+
+            TryRecordDragMovement(position);
             receivedInputSystemPointer = true;
-            nextMouseSampleAt = Time.unscaledTime +
-                Mathf.Max(10, mouseSampleIntervalMs) / 1000f;
         }
 
-        private void HandlePointerPress(InputAction.CallbackContext context)
+        private void HandlePointerPressed(InputAction.CallbackContext context)
         {
             if (sessionController == null || !sessionController.HasActiveSession ||
-                !sessionController.HasActiveCaptureContext ||
-                !TryGetPointerPosition(out Vector2 position))
+                !sessionController.HasActiveCaptureContext)
             {
                 return;
             }
 
-            sessionController.TryRecordClick(position, out _);
-            receivedInputSystemPointer = true;
+            isDragging = true;
+            hasRecordedDragStart = false;
+            hasDragStartPosition = false;
+
+            if (TryGetPointerPosition(out Vector2 position))
+            {
+                sessionController.TryRecordClick(position, out _);
+                dragStartPosition = position;
+                hasDragStartPosition = true;
+                receivedInputSystemPointer = true;
+            }
+        }
+
+        private void HandlePointerReleased(InputAction.CallbackContext context)
+        {
+            if (!isDragging)
+            {
+                return;
+            }
+
+            if (TryGetPointerPosition(out Vector2 position))
+            {
+                if (hasRecordedDragStart)
+                {
+                    sessionController.TryRecordDragPoint(position, "end", out _);
+                }
+                receivedInputSystemPointer = true;
+            }
+
+            isDragging = false;
+            hasRecordedDragStart = false;
+            hasDragStartPosition = false;
         }
 
         private void OnGUI()
@@ -132,11 +178,31 @@ namespace LudusSDK
             if (currentEvent.type == EventType.MouseDown)
             {
                 sessionController.TryRecordClick(position, out _);
+                isDragging = true;
+                hasRecordedDragStart = false;
+                dragStartPosition = position;
+                hasDragStartPosition = true;
             }
 
             bool isMouseMovement = currentEvent.type == EventType.MouseMove ||
                 currentEvent.type == EventType.MouseDrag || isRepaint;
             TryRecordFallbackMousePoint(position, isMouseMovement);
+
+            if (currentEvent.type == EventType.MouseDrag)
+            {
+                TryRecordDragMovement(position);
+            }
+
+            if (currentEvent.type == EventType.MouseUp && isDragging)
+            {
+                if (hasRecordedDragStart)
+                {
+                    sessionController.TryRecordDragPoint(position, "end", out _);
+                }
+                isDragging = false;
+                hasRecordedDragStart = false;
+                hasDragStartPosition = false;
+            }
         }
 
         private void TryRecordFallbackMousePoint(
@@ -160,6 +226,53 @@ namespace LudusSDK
             lastFallbackPointerPosition = position;
             hasLastFallbackPointerPosition = true;
             nextMouseSampleAt = Time.unscaledTime +
+                Mathf.Max(10, mouseSampleIntervalMs) / 1000f;
+        }
+
+        private void TryRecordDragMovement(Vector2 position)
+        {
+            if (!isDragging)
+            {
+                return;
+            }
+
+            if (!hasDragStartPosition)
+            {
+                dragStartPosition = position;
+                hasDragStartPosition = true;
+                return;
+            }
+
+            if (!hasRecordedDragStart)
+            {
+                if (
+                    (position - dragStartPosition).sqrMagnitude <
+                    DragMinimumDistancePixels * DragMinimumDistancePixels
+                )
+                {
+                    return;
+                }
+
+                hasRecordedDragStart = sessionController.TryRecordDragPoint(
+                    dragStartPosition,
+                    "start",
+                    out _
+                );
+                nextDragSampleAt = 0f;
+            }
+
+            if (!hasRecordedDragStart)
+            {
+                return;
+            }
+
+            if (Time.unscaledTime < nextDragSampleAt)
+            {
+                return;
+            }
+
+            sessionController.TryRecordDragPoint(position, "move", out _);
+            nextDragSampleAt = Time.unscaledTime +
                 Mathf.Max(10, mouseSampleIntervalMs) / 1000f;
         }
 
