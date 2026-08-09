@@ -12,6 +12,7 @@ namespace LudusSDK
         private const int MaxClicks = 10000;
         private const int MaxMousePathPoints = 50000;
         private const int MaxDragPathPoints = 50000;
+        private const int MaxGameEvents = 20000;
 
         public bool HasActiveSession => activeSession != null;
 
@@ -306,6 +307,69 @@ public bool TryRecordDragPoint(
     errorMessage = string.Empty;
     return true;
 }
+
+        public bool TryRecordTrackedInteraction(
+            LudusTrackedInteraction interaction,
+            out string errorMessage
+        )
+        {
+            if (!HasActiveSession)
+            {
+                errorMessage =
+                    "Não existe sessão ativa para registrar uma interação acompanhada.";
+                return false;
+            }
+
+            if (!HasActiveCaptureContext)
+            {
+                errorMessage =
+                    "Não existe contexto de captura ativo para registrar uma interação acompanhada.";
+                return false;
+            }
+
+            if (!activeSession.capabilities.customEvents)
+            {
+                errorMessage =
+                    "A capacidade customEvents deve estar habilitada para registrar interações acompanhadas.";
+                return false;
+            }
+
+            if (interaction == null)
+            {
+                errorMessage =
+                    "A interação acompanhada não pode ser nula.";
+                return false;
+            }
+
+            if (!interaction.TryValidate(out errorMessage))
+            {
+                return false;
+            }
+
+            if (activeSession.gameEvents.Count >= MaxGameEvents)
+            {
+                errorMessage =
+                    "O limite de eventos da sessão foi atingido.";
+                return false;
+            }
+
+            int timestamp = GetElapsedMilliseconds();
+
+            activeSession.gameEvents.Add(
+                new LudusGameEvent
+                {
+                    eventType = "TrackedInteraction",
+                    timestamp = timestamp,
+                    payloadJson = interaction.CreatePayload(
+                        activeContextInstanceId
+                    ),
+                }
+            );
+
+            RegisterFirstAction(timestamp);
+            errorMessage = string.Empty;
+            return true;
+        }
 
         public bool TryEndAndSerialize(
             out string json,

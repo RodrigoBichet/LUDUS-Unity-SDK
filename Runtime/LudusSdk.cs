@@ -46,6 +46,29 @@ namespace LudusSDK
             return controller.TryEndAndSerialize(out json, out errorMessage);
         }
 
+        public static bool TryRecordTrackedInteraction(
+            string displayName,
+            string interactionKind,
+            string action,
+            out string errorMessage
+        )
+        {
+            if (!TryGetSingleSessionController(
+                out LudusSessionController controller,
+                out errorMessage
+            ))
+            {
+                return false;
+            }
+
+            return controller.TryRecordTrackedInteraction(
+                displayName,
+                interactionKind,
+                action,
+                out errorMessage
+            );
+        }
+
         public static bool TryStartSessionForManualImport(
             string sessionDisplayName,
             out string errorMessage

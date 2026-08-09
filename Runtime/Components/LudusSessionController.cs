@@ -184,6 +184,23 @@ namespace LudusSDK
             );
         }
 
+        public bool TryRecordTrackedInteraction(
+            string displayName,
+            string interactionKind,
+            string action,
+            out string errorMessage
+        )
+        {
+            return lifecycle.TryRecordTrackedInteraction(
+                new LudusTrackedInteraction(
+                    displayName,
+                    interactionKind,
+                    action
+                ),
+                out errorMessage
+            );
+        }
+
         public bool TryEndAndSerialize(
             out string json,
             out string errorMessage

@@ -1,7 +1,9 @@
 {
   "name": "Ludus.Unity",
   "rootNamespace": "LudusSDK",
-  "references": [],
+  "references": [
+    "Unity.ugui"
+  ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
