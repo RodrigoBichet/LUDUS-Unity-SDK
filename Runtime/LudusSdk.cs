@@ -69,6 +69,31 @@ namespace LudusSDK
             );
         }
 
+        public static bool TryRecordTrackedInteraction(
+            string displayName,
+            string interactionKind,
+            string action,
+            Vector2 position,
+            out string errorMessage
+        )
+        {
+            if (!TryGetSingleSessionController(
+                out LudusSessionController controller,
+                out errorMessage
+            ))
+            {
+                return false;
+            }
+
+            return controller.TryRecordTrackedInteraction(
+                displayName,
+                interactionKind,
+                action,
+                position,
+                out errorMessage
+            );
+        }
+
         public static bool TryStartSessionForManualImport(
             string sessionDisplayName,
             out string errorMessage

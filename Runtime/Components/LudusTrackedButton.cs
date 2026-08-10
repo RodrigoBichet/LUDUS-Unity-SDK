@@ -1,11 +1,15 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace LudusSDK
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Button))]
-    public sealed class LudusTrackedButton : MonoBehaviour
+    public sealed class LudusTrackedButton :
+        MonoBehaviour,
+        IPointerDownHandler,
+        IPointerUpHandler
     {
         [SerializeField]
         private bool trackingEnabled = true;
@@ -15,6 +19,8 @@ namespace LudusSDK
 
         private Button trackedButton;
         private int lastAutomaticActivationFrame = -1;
+        private Vector2 lastPointerPosition;
+        private int lastPointerPositionFrame = -1;
 
 #if UNITY_EDITOR
         private bool editorPressStartedInside;
@@ -35,6 +41,7 @@ namespace LudusSDK
         {
             trackedButton = GetComponent<Button>();
             lastAutomaticActivationFrame = -1;
+            lastPointerPositionFrame = -1;
 
 #if UNITY_EDITOR
             editorPressStartedInside = false;
@@ -83,6 +90,36 @@ namespace LudusSDK
                 "activated",
                 out errorMessage
             );
+        }
+
+        public bool TryRecordActivation(
+            Vector2 position,
+            out string errorMessage
+        )
+        {
+            if (!trackingEnabled)
+            {
+                errorMessage = "O acompanhamento deste botão está desativado.";
+                return false;
+            }
+
+            return LudusSdk.TryRecordTrackedInteraction(
+                DashboardName,
+                "button",
+                "activated",
+                position,
+                out errorMessage
+            );
+        }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            RememberPointerPosition(eventData);
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            RememberPointerPosition(eventData);
         }
 
         public static bool CanTrack(GameObject target)
@@ -138,7 +175,7 @@ namespace LudusSDK
 
             if (shouldRecord)
             {
-                TryRecordAutomaticActivation();
+                TryRecordAutomaticActivation(screenPosition);
             }
         }
 
@@ -173,10 +210,46 @@ namespace LudusSDK
                 return;
             }
 
-            if (TryRecordActivation(out _))
+            bool hasRecentPointerPosition =
+                lastPointerPositionFrame >= 0 &&
+                Time.frameCount - lastPointerPositionFrame <= 1;
+
+            bool recorded = hasRecentPointerPosition
+                ? TryRecordActivation(lastPointerPosition, out _)
+                : TryRecordActivation(out _);
+
+            lastPointerPositionFrame = -1;
+
+            if (recorded)
             {
                 lastAutomaticActivationFrame = Time.frameCount;
             }
+        }
+
+        private void TryRecordAutomaticActivation(Vector2 position)
+        {
+            if (lastAutomaticActivationFrame == Time.frameCount)
+            {
+                return;
+            }
+
+            lastPointerPositionFrame = -1;
+
+            if (TryRecordActivation(position, out _))
+            {
+                lastAutomaticActivationFrame = Time.frameCount;
+            }
+        }
+
+        private void RememberPointerPosition(PointerEventData eventData)
+        {
+            if (eventData == null)
+            {
+                return;
+            }
+
+            lastPointerPosition = eventData.position;
+            lastPointerPositionFrame = Time.frameCount;
         }
     }
 }

@@ -10,6 +10,14 @@ namespace LudusSDK
         public string interactionKind;
         public string action;
 
+        private readonly bool hasPosition;
+        private readonly float positionX;
+        private readonly float positionY;
+
+        public bool HasPosition => hasPosition;
+        public float PositionX => positionX;
+        public float PositionY => positionY;
+
         public LudusTrackedInteraction(
             string displayName,
             string interactionKind,
@@ -22,6 +30,18 @@ namespace LudusSDK
                 "other"
             );
             this.action = NormalizeTechnicalName(action, "activated");
+        }
+
+        public LudusTrackedInteraction(
+            string displayName,
+            string interactionKind,
+            string action,
+            Vector2 position
+        ) : this(displayName, interactionKind, action)
+        {
+            hasPosition = true;
+            positionX = position.x;
+            positionY = position.y;
         }
 
         public bool TryValidate(out string errorMessage)
@@ -59,6 +79,21 @@ namespace LudusSDK
 
         internal string CreatePayload(string contextInstanceId)
         {
+            if (HasPosition)
+            {
+                return JsonUtility.ToJson(
+                    new PositionedTrackedInteractionPayload
+                    {
+                        contextInstanceId = contextInstanceId,
+                        displayName = displayName,
+                        interactionKind = interactionKind,
+                        action = action,
+                        x = positionX,
+                        y = positionY,
+                    }
+                );
+            }
+
             return JsonUtility.ToJson(
                 new TrackedInteractionPayload
                 {
@@ -87,6 +122,17 @@ namespace LudusSDK
             public string displayName;
             public string interactionKind;
             public string action;
+        }
+
+        [Serializable]
+        private sealed class PositionedTrackedInteractionPayload
+        {
+            public string contextInstanceId;
+            public string displayName;
+            public string interactionKind;
+            public string action;
+            public float x;
+            public float y;
         }
     }
 }

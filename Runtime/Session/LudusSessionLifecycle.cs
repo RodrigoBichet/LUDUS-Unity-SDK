@@ -346,6 +346,16 @@ public bool TryRecordDragPoint(
                 return false;
             }
 
+            if (
+                interaction.HasPosition &&
+                !HasValidPoint(interaction.PositionX, interaction.PositionY)
+            )
+            {
+                errorMessage =
+                    "A interação acompanhada possui coordenadas inválidas para o viewport.";
+                return false;
+            }
+
             if (activeSession.gameEvents.Count >= MaxGameEvents)
             {
                 errorMessage =
