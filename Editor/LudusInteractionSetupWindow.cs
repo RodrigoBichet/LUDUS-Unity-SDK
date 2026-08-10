@@ -36,12 +36,12 @@ namespace LudusSDK.Editor
             EditorGUILayout.Space();
 
             EditorGUILayout.HelpBox(
-                "Arraste um botão da Hierarchy. O SDK detecta o componente Button, usa o nome do objeto e configura o acompanhamento automaticamente.",
+                "Arraste um botão ou campo de texto da Hierarchy. O SDK detecta o tipo, usa o nome do objeto e configura o acompanhamento automaticamente. Em campos de texto, o conteúdo digitado nunca é coletado.",
                 MessageType.Info
             );
 
             GameObject droppedObject = EditorGUILayout.ObjectField(
-                "Arraste um botão aqui",
+                "Arraste um objeto aqui",
                 null,
                 typeof(GameObject),
                 true
@@ -49,11 +49,15 @@ namespace LudusSDK.Editor
 
             if (droppedObject != null)
             {
-                TryAddTrackedButton(droppedObject, activeScene);
+                TryAddTrackedInteraction(droppedObject, activeScene);
             }
 
             EditorGUILayout.Space();
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             DrawTrackedButtons(activeScene);
+            EditorGUILayout.Space();
+            DrawTrackedTextInputs(activeScene);
+            EditorGUILayout.EndScrollView();
         }
 
         private void DrawTrackedButtons(Scene activeScene)
@@ -68,7 +72,7 @@ namespace LudusSDK.Editor
                 .ToArray();
 
             EditorGUILayout.LabelField(
-                $"Objetos configurados ({trackedButtons.Length})",
+                $"Botões acompanhados ({trackedButtons.Length})",
                 EditorStyles.boldLabel
             );
 
@@ -81,14 +85,133 @@ namespace LudusSDK.Editor
                 return;
             }
 
-            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-
             foreach (LudusTrackedButton trackedButton in trackedButtons)
             {
                 DrawTrackedButton(trackedButton);
             }
+        }
 
-            EditorGUILayout.EndScrollView();
+        private void DrawTrackedTextInputs(Scene activeScene)
+        {
+            LudusTrackedTextInput[] trackedTextInputs =
+                Object.FindObjectsByType<LudusTrackedTextInput>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None
+                )
+                .Where(item => item.gameObject.scene == activeScene)
+                .OrderBy(item => item.gameObject.name)
+                .ToArray();
+
+            EditorGUILayout.LabelField(
+                $"Campos de texto acompanhados ({trackedTextInputs.Length})",
+                EditorStyles.boldLabel
+            );
+
+            if (trackedTextInputs.Length == 0)
+            {
+                EditorGUILayout.HelpBox(
+                    "Nenhum campo de texto acompanhado nesta cena.",
+                    MessageType.None
+                );
+                return;
+            }
+
+            foreach (LudusTrackedTextInput trackedTextInput in trackedTextInputs)
+            {
+                DrawTrackedTextInput(trackedTextInput);
+            }
+        }
+
+        private static void DrawTrackedTextInput(
+            LudusTrackedTextInput trackedTextInput
+        )
+        {
+            SerializedObject serializedInput =
+                new SerializedObject(trackedTextInput);
+            serializedInput.Update();
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(
+                trackedTextInput.gameObject.name,
+                EditorStyles.boldLabel
+            );
+
+            if (GUILayout.Button("Selecionar", GUILayout.Width(80f)))
+            {
+                Selection.activeGameObject = trackedTextInput.gameObject;
+                EditorGUIUtility.PingObject(trackedTextInput.gameObject);
+            }
+
+            if (GUILayout.Button("Remover", GUILayout.Width(75f)))
+            {
+                Scene ownerScene = trackedTextInput.gameObject.scene;
+                Undo.DestroyObjectImmediate(trackedTextInput);
+                EditorSceneManager.MarkSceneDirty(ownerScene);
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.EndVertical();
+                GUIUtility.ExitGUI();
+                return;
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            float previousLabelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 190f;
+            EditorGUILayout.PropertyField(
+                serializedInput.FindProperty("trackingEnabled"),
+                new GUIContent("Acompanhar este campo")
+            );
+            EditorGUILayout.PropertyField(
+                serializedInput.FindProperty("dashboardName"),
+                new GUIContent("Nome exibido no dashboard")
+            );
+            EditorGUILayout.LabelField(
+                "Tipo detectado",
+                trackedTextInput.DetectedFieldType
+            );
+            EditorGUIUtility.labelWidth = previousLabelWidth;
+            EditorGUILayout.HelpBox(
+                "Privacidade: somente a conclusão, a quantidade de caracteres e se o campo ficou vazio são registradas. O texto digitado não entra no JSON.",
+                MessageType.None
+            );
+
+            serializedInput.ApplyModifiedProperties();
+            EditorGUILayout.EndVertical();
+        }
+
+        private static void TryAddTrackedInteraction(
+            GameObject target,
+            Scene activeScene
+        )
+        {
+            if (target.scene != activeScene)
+            {
+                EditorUtility.DisplayDialog(
+                    "Interações LUDUS",
+                    "Arraste um objeto que pertença à cena ativa.",
+                    "Entendi"
+                );
+                return;
+            }
+
+            if (LudusTrackedTextInput.CanTrack(target))
+            {
+                TryAddTrackedTextInput(target, activeScene);
+                return;
+            }
+
+            if (LudusTrackedButton.CanTrack(target))
+            {
+                TryAddTrackedButton(target, activeScene);
+                return;
+            }
+
+            EditorUtility.DisplayDialog(
+                "Interações LUDUS",
+                "O objeto selecionado não possui um Button, InputField ou TMP_InputField compatível.",
+                "Entendi"
+            );
         }
 
         private void DrawTrackedButton(LudusTrackedButton trackedButton)
@@ -123,6 +246,8 @@ namespace LudusSDK.Editor
 
             EditorGUILayout.EndHorizontal();
 
+            float previousLabelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 190f;
             EditorGUILayout.PropertyField(
                 serializedButton.FindProperty("trackingEnabled"),
                 new GUIContent("Acompanhar este botão")
@@ -132,6 +257,7 @@ namespace LudusSDK.Editor
                 new GUIContent("Nome exibido no dashboard")
             );
             EditorGUILayout.LabelField("Tipo detectado", "Botão");
+            EditorGUIUtility.labelWidth = previousLabelWidth;
 
             serializedButton.ApplyModifiedProperties();
             EditorGUILayout.EndVertical();
@@ -182,6 +308,35 @@ namespace LudusSDK.Editor
             Selection.activeGameObject = target;
             EditorGUIUtility.PingObject(target);
         }
+
+        private static void TryAddTrackedTextInput(
+            GameObject target,
+            Scene activeScene
+        )
+        {
+            LudusTrackedTextInput existing =
+                target.GetComponent<LudusTrackedTextInput>();
+
+            if (existing != null)
+            {
+                Selection.activeGameObject = target;
+                EditorGUIUtility.PingObject(target);
+                return;
+            }
+
+            LudusTrackedTextInput trackedTextInput =
+                Undo.AddComponent<LudusTrackedTextInput>(target);
+            Undo.RecordObject(
+                trackedTextInput,
+                "Configurar campo de texto LUDUS"
+            );
+            trackedTextInput.Configure(target.name);
+            EditorUtility.SetDirty(trackedTextInput);
+            EditorSceneManager.MarkSceneDirty(activeScene);
+
+            Selection.activeGameObject = target;
+            EditorGUIUtility.PingObject(target);
+        }
     }
 
     [CustomEditor(typeof(LudusTrackedButton))]
@@ -202,6 +357,37 @@ namespace LudusSDK.Editor
             EditorGUILayout.PropertyField(
                 serializedObject.FindProperty("dashboardName"),
                 new GUIContent("Nome exibido no dashboard")
+            );
+
+            serializedObject.ApplyModifiedProperties();
+        }
+    }
+
+    [CustomEditor(typeof(LudusTrackedTextInput))]
+    public sealed class LudusTrackedTextInputEditor : UnityEditor.Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            serializedObject.Update();
+
+            LudusTrackedTextInput trackedTextInput =
+                (LudusTrackedTextInput)target;
+
+            EditorGUILayout.HelpBox(
+                "O SDK registra quando o preenchimento deste campo é concluído. O conteúdo digitado nunca é coletado; somente a quantidade de caracteres e se o campo ficou vazio.",
+                MessageType.Info
+            );
+            EditorGUILayout.PropertyField(
+                serializedObject.FindProperty("trackingEnabled"),
+                new GUIContent("Acompanhar este campo")
+            );
+            EditorGUILayout.PropertyField(
+                serializedObject.FindProperty("dashboardName"),
+                new GUIContent("Nome exibido no dashboard")
+            );
+            EditorGUILayout.LabelField(
+                "Tipo detectado",
+                trackedTextInput.DetectedFieldType
             );
 
             serializedObject.ApplyModifiedProperties();

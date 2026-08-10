@@ -1,9 +1,11 @@
 {
     "name": "Ludus.Unity.Tests.Editor",
     "rootNamespace": "LudusSDK.Tests",
-    "references": [
-        "Ludus.Unity"
-    ],
+  "references": [
+    "Ludus.Unity",
+    "Unity.ugui",
+    "Unity.TextMeshPro"
+  ],
     "includePlatforms": [
         "Editor"
     ],

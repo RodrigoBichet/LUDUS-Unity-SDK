@@ -2,7 +2,8 @@
   "name": "Ludus.Unity",
   "rootNamespace": "LudusSDK",
   "references": [
-    "Unity.ugui"
+    "Unity.ugui",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

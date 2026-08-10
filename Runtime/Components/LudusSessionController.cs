@@ -220,6 +220,42 @@ namespace LudusSDK
             );
         }
 
+        public bool TryRecordTextInputCompletion(
+            string displayName,
+            int characterCount,
+            out string errorMessage
+        )
+        {
+            return lifecycle.TryRecordTrackedInteraction(
+                new LudusTrackedInteraction(
+                    displayName,
+                    "text-input",
+                    "completed",
+                    characterCount
+                ),
+                out errorMessage
+            );
+        }
+
+        public bool TryRecordTextInputCompletion(
+            string displayName,
+            int characterCount,
+            Vector2 position,
+            out string errorMessage
+        )
+        {
+            return lifecycle.TryRecordTrackedInteraction(
+                new LudusTrackedInteraction(
+                    displayName,
+                    "text-input",
+                    "completed",
+                    characterCount,
+                    position
+                ),
+                out errorMessage
+            );
+        }
+
         public bool TryEndAndSerialize(
             out string json,
             out string errorMessage

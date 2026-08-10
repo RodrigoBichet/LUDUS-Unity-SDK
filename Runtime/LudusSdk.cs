@@ -94,6 +94,50 @@ namespace LudusSDK
             );
         }
 
+        public static bool TryRecordTextInputCompletion(
+            string displayName,
+            int characterCount,
+            out string errorMessage
+        )
+        {
+            if (!TryGetSingleSessionController(
+                out LudusSessionController controller,
+                out errorMessage
+            ))
+            {
+                return false;
+            }
+
+            return controller.TryRecordTextInputCompletion(
+                displayName,
+                characterCount,
+                out errorMessage
+            );
+        }
+
+        public static bool TryRecordTextInputCompletion(
+            string displayName,
+            int characterCount,
+            Vector2 position,
+            out string errorMessage
+        )
+        {
+            if (!TryGetSingleSessionController(
+                out LudusSessionController controller,
+                out errorMessage
+            ))
+            {
+                return false;
+            }
+
+            return controller.TryRecordTextInputCompletion(
+                displayName,
+                characterCount,
+                position,
+                out errorMessage
+            );
+        }
+
         public static bool TryStartSessionForManualImport(
             string sessionDisplayName,
             out string errorMessage
