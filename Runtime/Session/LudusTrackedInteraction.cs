@@ -15,6 +15,13 @@ namespace LudusSDK
         private readonly float positionY;
         private readonly bool hasTextSummary;
         private readonly int characterCount;
+        private readonly bool hasDragSummary;
+        private readonly float dragStartX;
+        private readonly float dragStartY;
+        private readonly float dragEndX;
+        private readonly float dragEndY;
+        private readonly int dragDurationMs;
+        private readonly float dragDistancePx;
 
         public bool HasPosition => hasPosition;
         public float PositionX => positionX;
@@ -22,6 +29,13 @@ namespace LudusSDK
         public bool HasTextSummary => hasTextSummary;
         public int CharacterCount => characterCount;
         public bool WasEmpty => hasTextSummary && characterCount == 0;
+        public bool HasDragSummary => hasDragSummary;
+        public float DragStartX => dragStartX;
+        public float DragStartY => dragStartY;
+        public float DragEndX => dragEndX;
+        public float DragEndY => dragEndY;
+        public int DragDurationMs => dragDurationMs;
+        public float DragDistancePx => dragDistancePx;
 
         public LudusTrackedInteraction(
             string displayName,
@@ -47,6 +61,28 @@ namespace LudusSDK
             hasPosition = true;
             positionX = position.x;
             positionY = position.y;
+        }
+
+        public LudusTrackedInteraction(
+            string displayName,
+            Vector2 dragStartPosition,
+            Vector2 dragEndPosition,
+            int durationMs
+        ) : this(displayName, "draggable-object", "completed")
+        {
+            hasPosition = true;
+            positionX = dragEndPosition.x;
+            positionY = dragEndPosition.y;
+            hasDragSummary = true;
+            dragStartX = dragStartPosition.x;
+            dragStartY = dragStartPosition.y;
+            dragEndX = dragEndPosition.x;
+            dragEndY = dragEndPosition.y;
+            dragDurationMs = durationMs;
+            dragDistancePx = Vector2.Distance(
+                dragStartPosition,
+                dragEndPosition
+            );
         }
 
         public LudusTrackedInteraction(
@@ -114,12 +150,40 @@ namespace LudusSDK
                 return false;
             }
 
+            if (hasDragSummary && dragDurationMs < 0)
+            {
+                errorMessage =
+                    "A duração do arraste não pode ser negativa.";
+                return false;
+            }
+
             errorMessage = string.Empty;
             return true;
         }
 
         internal string CreatePayload(string contextInstanceId)
         {
+            if (HasDragSummary)
+            {
+                return JsonUtility.ToJson(
+                    new TrackedDragPayload
+                    {
+                        contextInstanceId = contextInstanceId,
+                        displayName = displayName,
+                        interactionKind = interactionKind,
+                        action = action,
+                        startX = dragStartX,
+                        startY = dragStartY,
+                        endX = dragEndX,
+                        endY = dragEndY,
+                        durationMs = dragDurationMs,
+                        distancePx = dragDistancePx,
+                        x = dragEndX,
+                        y = dragEndY,
+                    }
+                );
+            }
+
             if (HasTextSummary && HasPosition)
             {
                 return JsonUtility.ToJson(
@@ -228,6 +292,23 @@ namespace LudusSDK
             public string action;
             public int characterCount;
             public bool wasEmpty;
+            public float x;
+            public float y;
+        }
+
+        [Serializable]
+        private sealed class TrackedDragPayload
+        {
+            public string contextInstanceId;
+            public string displayName;
+            public string interactionKind;
+            public string action;
+            public float startX;
+            public float startY;
+            public float endX;
+            public float endY;
+            public int durationMs;
+            public float distancePx;
             public float x;
             public float y;
         }

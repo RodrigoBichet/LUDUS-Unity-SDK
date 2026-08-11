@@ -256,6 +256,25 @@ namespace LudusSDK
             );
         }
 
+        public bool TryRecordTrackedDrag(
+            string displayName,
+            Vector2 startPosition,
+            Vector2 endPosition,
+            int durationMs,
+            out string errorMessage
+        )
+        {
+            return lifecycle.TryRecordTrackedInteraction(
+                new LudusTrackedInteraction(
+                    displayName,
+                    startPosition,
+                    endPosition,
+                    durationMs
+                ),
+                out errorMessage
+            );
+        }
+
         public bool TryEndAndSerialize(
             out string json,
             out string errorMessage

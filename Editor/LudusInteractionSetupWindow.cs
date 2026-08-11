@@ -36,7 +36,7 @@ namespace LudusSDK.Editor
             EditorGUILayout.Space();
 
             EditorGUILayout.HelpBox(
-                "Arraste um botão ou campo de texto da Hierarchy. O SDK detecta o tipo, usa o nome do objeto e configura o acompanhamento automaticamente. Em campos de texto, o conteúdo digitado nunca é coletado.",
+                "Arraste um objeto da Hierarchy. O SDK detecta Button e campos de texto automaticamente. Para imagens, sprites e outros objetos genéricos, você escolhe se a função acompanhada é clicável ou arrastável.",
                 MessageType.Info
             );
 
@@ -56,7 +56,11 @@ namespace LudusSDK.Editor
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             DrawTrackedButtons(activeScene);
             EditorGUILayout.Space();
+            DrawTrackedClickables(activeScene);
+            EditorGUILayout.Space();
             DrawTrackedTextInputs(activeScene);
+            EditorGUILayout.Space();
+            DrawTrackedDraggables(activeScene);
             EditorGUILayout.EndScrollView();
         }
 
@@ -167,7 +171,7 @@ namespace LudusSDK.Editor
                 new GUIContent("Nome exibido no dashboard")
             );
             EditorGUILayout.LabelField(
-                "Tipo detectado",
+                "Detectado automaticamente",
                 trackedTextInput.DetectedFieldType
             );
             EditorGUIUtility.labelWidth = previousLabelWidth;
@@ -177,6 +181,196 @@ namespace LudusSDK.Editor
             );
 
             serializedInput.ApplyModifiedProperties();
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawTrackedClickables(Scene activeScene)
+        {
+            LudusTrackedClickable[] trackedClickables =
+                Object.FindObjectsByType<LudusTrackedClickable>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None
+                )
+                .Where(item => item.gameObject.scene == activeScene)
+                .OrderBy(item => item.gameObject.name)
+                .ToArray();
+
+            EditorGUILayout.LabelField(
+                $"Objetos clicáveis acompanhados ({trackedClickables.Length})",
+                EditorStyles.boldLabel
+            );
+
+            if (trackedClickables.Length == 0)
+            {
+                EditorGUILayout.HelpBox(
+                    "Nenhum objeto clicável genérico acompanhado nesta cena.",
+                    MessageType.None
+                );
+                return;
+            }
+
+            foreach (LudusTrackedClickable trackedClickable in trackedClickables)
+            {
+                DrawTrackedClickable(trackedClickable);
+            }
+        }
+
+        private static void DrawTrackedClickable(
+            LudusTrackedClickable trackedClickable
+        )
+        {
+            SerializedObject serializedClickable =
+                new SerializedObject(trackedClickable);
+            serializedClickable.Update();
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(
+                trackedClickable.gameObject.name,
+                EditorStyles.boldLabel
+            );
+
+            if (GUILayout.Button("Selecionar", GUILayout.Width(80f)))
+            {
+                Selection.activeGameObject = trackedClickable.gameObject;
+                EditorGUIUtility.PingObject(trackedClickable.gameObject);
+            }
+
+            if (GUILayout.Button("Remover", GUILayout.Width(75f)))
+            {
+                Scene ownerScene = trackedClickable.gameObject.scene;
+                Undo.DestroyObjectImmediate(trackedClickable);
+                EditorSceneManager.MarkSceneDirty(ownerScene);
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.EndVertical();
+                GUIUtility.ExitGUI();
+                return;
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            float previousLabelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 190f;
+            EditorGUILayout.PropertyField(
+                serializedClickable.FindProperty("trackingEnabled"),
+                new GUIContent("Acompanhar este objeto")
+            );
+            EditorGUILayout.PropertyField(
+                serializedClickable.FindProperty("dashboardName"),
+                new GUIContent("Nome exibido no dashboard")
+            );
+            EditorGUILayout.LabelField("Função escolhida", "Objeto clicável");
+            EditorGUIUtility.labelWidth = previousLabelWidth;
+
+            serializedClickable.ApplyModifiedProperties();
+
+            if (GUILayout.Button("Trocar função para objeto arrastável"))
+            {
+                SwitchToTrackedDraggable(trackedClickable);
+                EditorGUILayout.EndVertical();
+                GUIUtility.ExitGUI();
+                return;
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawTrackedDraggables(Scene activeScene)
+        {
+            LudusTrackedDraggable[] trackedDraggables =
+                Object.FindObjectsByType<LudusTrackedDraggable>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None
+                )
+                .Where(item => item.gameObject.scene == activeScene)
+                .OrderBy(item => item.gameObject.name)
+                .ToArray();
+
+            EditorGUILayout.LabelField(
+                $"Objetos arrastáveis acompanhados ({trackedDraggables.Length})",
+                EditorStyles.boldLabel
+            );
+
+            if (trackedDraggables.Length == 0)
+            {
+                EditorGUILayout.HelpBox(
+                    "Nenhum objeto arrastável acompanhado nesta cena.",
+                    MessageType.None
+                );
+                return;
+            }
+
+            foreach (LudusTrackedDraggable trackedDraggable in trackedDraggables)
+            {
+                DrawTrackedDraggable(trackedDraggable);
+            }
+        }
+
+        private static void DrawTrackedDraggable(
+            LudusTrackedDraggable trackedDraggable
+        )
+        {
+            SerializedObject serializedDraggable =
+                new SerializedObject(trackedDraggable);
+            serializedDraggable.Update();
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(
+                trackedDraggable.gameObject.name,
+                EditorStyles.boldLabel
+            );
+
+            if (GUILayout.Button("Selecionar", GUILayout.Width(80f)))
+            {
+                Selection.activeGameObject = trackedDraggable.gameObject;
+                EditorGUIUtility.PingObject(trackedDraggable.gameObject);
+            }
+
+            if (GUILayout.Button("Remover", GUILayout.Width(75f)))
+            {
+                Scene ownerScene = trackedDraggable.gameObject.scene;
+                Undo.DestroyObjectImmediate(trackedDraggable);
+                EditorSceneManager.MarkSceneDirty(ownerScene);
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.EndVertical();
+                GUIUtility.ExitGUI();
+                return;
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            float previousLabelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 190f;
+            EditorGUILayout.PropertyField(
+                serializedDraggable.FindProperty("trackingEnabled"),
+                new GUIContent("Acompanhar este objeto")
+            );
+            EditorGUILayout.PropertyField(
+                serializedDraggable.FindProperty("dashboardName"),
+                new GUIContent("Nome exibido no dashboard")
+            );
+            EditorGUILayout.PropertyField(
+                serializedDraggable.FindProperty("minimumDistancePixels"),
+                new GUIContent("Movimento mínimo (pixels)")
+            );
+            EditorGUILayout.LabelField("Função escolhida", "Objeto arrastável");
+            EditorGUIUtility.labelWidth = previousLabelWidth;
+            EditorGUILayout.HelpBox(
+                "O SDK apenas observa o gesto. O movimento visual e as regras de destino continuam sob responsabilidade do jogo.",
+                MessageType.None
+            );
+
+            serializedDraggable.ApplyModifiedProperties();
+
+            if (GUILayout.Button("Trocar função para objeto clicável"))
+            {
+                SwitchToTrackedClickable(trackedDraggable);
+                EditorGUILayout.EndVertical();
+                GUIUtility.ExitGUI();
+                return;
+            }
+
             EditorGUILayout.EndVertical();
         }
 
@@ -207,11 +401,68 @@ namespace LudusSDK.Editor
                 return;
             }
 
-            EditorUtility.DisplayDialog(
-                "Interações LUDUS",
-                "O objeto selecionado não possui um Button, InputField ou TMP_InputField compatível.",
-                "Entendi"
+            LudusTrackedClickable existingClickable =
+                target.GetComponent<LudusTrackedClickable>();
+
+            if (existingClickable != null)
+            {
+                int existingChoice = EditorUtility.DisplayDialogComplex(
+                    "Objeto já acompanhado como clicável",
+                    "Este objeto já possui uma função LUDUS, possivelmente copiada durante uma duplicação. Você pode mantê-la ou trocar para arrastável.",
+                    "Manter clicável",
+                    "Cancelar",
+                    "Trocar para arrastável"
+                );
+
+                if (existingChoice == 2)
+                {
+                    SwitchToTrackedDraggable(existingClickable);
+                }
+
+                Selection.activeGameObject = target;
+                EditorGUIUtility.PingObject(target);
+                return;
+            }
+
+            LudusTrackedDraggable existingDraggable =
+                target.GetComponent<LudusTrackedDraggable>();
+
+            if (existingDraggable != null)
+            {
+                int existingChoice = EditorUtility.DisplayDialogComplex(
+                    "Objeto já acompanhado como arrastável",
+                    "Este objeto já possui uma função LUDUS, possivelmente copiada durante uma duplicação. Você pode mantê-la ou trocar para clicável.",
+                    "Manter arrastável",
+                    "Cancelar",
+                    "Trocar para clicável"
+                );
+
+                if (existingChoice == 2)
+                {
+                    SwitchToTrackedClickable(existingDraggable);
+                }
+
+                Selection.activeGameObject = target;
+                EditorGUIUtility.PingObject(target);
+                return;
+            }
+
+            int chosenFunction = EditorUtility.DisplayDialogComplex(
+                "Como este objeto funciona no jogo?",
+                "O SDK não deve deduzir a função apenas pela aparência do objeto. Escolha como esta interação deve ser acompanhada.",
+                "Objeto arrastável",
+                "Cancelar",
+                "Objeto clicável"
             );
+
+            if (chosenFunction == 0)
+            {
+                TryAddTrackedDraggable(target, activeScene);
+            }
+            else if (chosenFunction == 2)
+            {
+                TryAddTrackedClickable(target, activeScene);
+            }
         }
 
         private void DrawTrackedButton(LudusTrackedButton trackedButton)
@@ -256,7 +507,7 @@ namespace LudusSDK.Editor
                 serializedButton.FindProperty("dashboardName"),
                 new GUIContent("Nome exibido no dashboard")
             );
-            EditorGUILayout.LabelField("Tipo detectado", "Botão");
+            EditorGUILayout.LabelField("Detectado automaticamente", "Botão");
             EditorGUIUtility.labelWidth = previousLabelWidth;
 
             serializedButton.ApplyModifiedProperties();
@@ -337,6 +588,106 @@ namespace LudusSDK.Editor
             Selection.activeGameObject = target;
             EditorGUIUtility.PingObject(target);
         }
+
+        private static void TryAddTrackedDraggable(
+            GameObject target,
+            Scene activeScene
+        )
+        {
+            LudusTrackedDraggable existing =
+                target.GetComponent<LudusTrackedDraggable>();
+
+            if (existing != null)
+            {
+                Selection.activeGameObject = target;
+                EditorGUIUtility.PingObject(target);
+                return;
+            }
+
+            LudusTrackedDraggable trackedDraggable =
+                Undo.AddComponent<LudusTrackedDraggable>(target);
+            Undo.RecordObject(
+                trackedDraggable,
+                "Configurar objeto arrastável LUDUS"
+            );
+            trackedDraggable.Configure(target.name);
+            EditorUtility.SetDirty(trackedDraggable);
+            EditorSceneManager.MarkSceneDirty(activeScene);
+
+            Selection.activeGameObject = target;
+            EditorGUIUtility.PingObject(target);
+        }
+
+        private static void TryAddTrackedClickable(
+            GameObject target,
+            Scene activeScene
+        )
+        {
+            LudusTrackedClickable existing =
+                target.GetComponent<LudusTrackedClickable>();
+
+            if (existing != null)
+            {
+                Selection.activeGameObject = target;
+                EditorGUIUtility.PingObject(target);
+                return;
+            }
+
+            LudusTrackedClickable trackedClickable =
+                Undo.AddComponent<LudusTrackedClickable>(target);
+            Undo.RecordObject(
+                trackedClickable,
+                "Configurar objeto clicável LUDUS"
+            );
+            trackedClickable.Configure(target.name);
+            EditorUtility.SetDirty(trackedClickable);
+            EditorSceneManager.MarkSceneDirty(activeScene);
+
+            Selection.activeGameObject = target;
+            EditorGUIUtility.PingObject(target);
+        }
+
+        private static void SwitchToTrackedClickable(
+            LudusTrackedDraggable trackedDraggable
+        )
+        {
+            GameObject target = trackedDraggable.gameObject;
+            Scene ownerScene = target.scene;
+            string dashboardName = trackedDraggable.DashboardName;
+            bool trackingEnabled = trackedDraggable.TrackingEnabled;
+
+            Undo.DestroyObjectImmediate(trackedDraggable);
+            LudusTrackedClickable trackedClickable =
+                Undo.AddComponent<LudusTrackedClickable>(target);
+            Undo.RecordObject(
+                trackedClickable,
+                "Trocar função LUDUS para clicável"
+            );
+            trackedClickable.Configure(dashboardName, trackingEnabled);
+            EditorUtility.SetDirty(trackedClickable);
+            EditorSceneManager.MarkSceneDirty(ownerScene);
+        }
+
+        private static void SwitchToTrackedDraggable(
+            LudusTrackedClickable trackedClickable
+        )
+        {
+            GameObject target = trackedClickable.gameObject;
+            Scene ownerScene = target.scene;
+            string dashboardName = trackedClickable.DashboardName;
+            bool trackingEnabled = trackedClickable.TrackingEnabled;
+
+            Undo.DestroyObjectImmediate(trackedClickable);
+            LudusTrackedDraggable trackedDraggable =
+                Undo.AddComponent<LudusTrackedDraggable>(target);
+            Undo.RecordObject(
+                trackedDraggable,
+                "Trocar função LUDUS para arrastável"
+            );
+            trackedDraggable.Configure(dashboardName, trackingEnabled);
+            EditorUtility.SetDirty(trackedDraggable);
+            EditorSceneManager.MarkSceneDirty(ownerScene);
+        }
     }
 
     [CustomEditor(typeof(LudusTrackedButton))]
@@ -388,6 +739,58 @@ namespace LudusSDK.Editor
             EditorGUILayout.LabelField(
                 "Tipo detectado",
                 trackedTextInput.DetectedFieldType
+            );
+
+            serializedObject.ApplyModifiedProperties();
+        }
+    }
+
+    [CustomEditor(typeof(LudusTrackedDraggable))]
+    public sealed class LudusTrackedDraggableEditor : UnityEditor.Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            serializedObject.Update();
+
+            EditorGUILayout.HelpBox(
+                "O SDK registra o início, o fim, a duração e a distância do gesto. Ele não move o objeto e não classifica o resultado como certo ou errado.",
+                MessageType.Info
+            );
+            EditorGUILayout.PropertyField(
+                serializedObject.FindProperty("trackingEnabled"),
+                new GUIContent("Acompanhar este objeto")
+            );
+            EditorGUILayout.PropertyField(
+                serializedObject.FindProperty("dashboardName"),
+                new GUIContent("Nome exibido no dashboard")
+            );
+            EditorGUILayout.PropertyField(
+                serializedObject.FindProperty("minimumDistancePixels"),
+                new GUIContent("Movimento mínimo (pixels)")
+            );
+
+            serializedObject.ApplyModifiedProperties();
+        }
+    }
+
+    [CustomEditor(typeof(LudusTrackedClickable))]
+    public sealed class LudusTrackedClickableEditor : UnityEditor.Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            serializedObject.Update();
+
+            EditorGUILayout.HelpBox(
+                "Use este acompanhamento quando o objeto tem função de clique ou toque no jogo, mesmo sem possuir um componente Button. O SDK observa o acionamento e não altera a lógica do objeto.",
+                MessageType.Info
+            );
+            EditorGUILayout.PropertyField(
+                serializedObject.FindProperty("trackingEnabled"),
+                new GUIContent("Acompanhar este objeto")
+            );
+            EditorGUILayout.PropertyField(
+                serializedObject.FindProperty("dashboardName"),
+                new GUIContent("Nome exibido no dashboard")
             );
 
             serializedObject.ApplyModifiedProperties();

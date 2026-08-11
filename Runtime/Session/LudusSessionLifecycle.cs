@@ -356,6 +356,25 @@ public bool TryRecordDragPoint(
                 return false;
             }
 
+            if (
+                interaction.HasDragSummary &&
+                (
+                    !HasValidPoint(
+                        interaction.DragStartX,
+                        interaction.DragStartY
+                    ) ||
+                    !HasValidPoint(
+                        interaction.DragEndX,
+                        interaction.DragEndY
+                    )
+                )
+            )
+            {
+                errorMessage =
+                    "O arraste acompanhado possui coordenadas inválidas para o viewport.";
+                return false;
+            }
+
             if (activeSession.gameEvents.Count >= MaxGameEvents)
             {
                 errorMessage =

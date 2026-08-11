@@ -115,6 +115,31 @@ namespace LudusSDK
             );
         }
 
+        public static bool TryRecordTrackedDrag(
+            string displayName,
+            Vector2 startPosition,
+            Vector2 endPosition,
+            int durationMs,
+            out string errorMessage
+        )
+        {
+            if (!TryGetSingleSessionController(
+                out LudusSessionController controller,
+                out errorMessage
+            ))
+            {
+                return false;
+            }
+
+            return controller.TryRecordTrackedDrag(
+                displayName,
+                startPosition,
+                endPosition,
+                durationMs,
+                out errorMessage
+            );
+        }
+
         public static bool TryRecordTextInputCompletion(
             string displayName,
             int characterCount,
