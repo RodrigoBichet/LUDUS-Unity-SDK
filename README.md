@@ -10,6 +10,13 @@ conclusiva de aprendizagem.
 > O SDK está em evolução. Antes de usar em coleta real, valide a integração
 > com identidades fictícias, o fluxo do jogo e o build WebGL.
 
+## Comece por aqui
+
+O roteiro único de instalação, configuração, WebGL e importação no Dashboard
+está em [Guia de integração end to end](Documentation~/GUIA_INTEGRACAO_END_TO_END.md).
+Use esse documento para validar a experiência de uma pessoa desenvolvedora que
+está conhecendo o SDK pela primeira vez.
+
 ## O que o SDK faz
 
 - inicia e encerra sessões no contrato LUDUS;
