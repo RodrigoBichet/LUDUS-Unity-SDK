@@ -6,8 +6,9 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 
 ### Adicionado
 
-- Guia definitivo de integração end to end, da instalação via UPM ao teste
-  WebGL e à importação segura no Dashboard.
+- Guia definitivo de integração end to end revisado com instalação via UPM,
+  configuração exata do Inspector, ciclo de vida por código ou UnityEvent,
+  requisitos de UI/objetos 2D, teste WebGL e importação segura no Dashboard.
 - Download WebGL com nome legível formado por jogo, rótulo opcional e data/hora de encerramento.
 - Fluxo de sessão para importação manual sem o integrador informar ID técnico do aluno na Unity.
 
