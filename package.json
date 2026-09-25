@@ -1,8 +1,10 @@
 {
     "name": "br.edu.ufpel.ludus.sdk",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "displayName": "LUDUS Unity SDK",
     "description": "SDK Unity plugável para coleta de telemetria educacional compatível com a plataforma LUDUS Acompanha.",
+    "documentationUrl": "https://github.com/RodrigoBichet/LUDUS-Unity-SDK/blob/v0.1.1/Documentation~/GUIA_INTEGRACAO_END_TO_END.md",
+    "changelogUrl": "https://github.com/RodrigoBichet/LUDUS-Unity-SDK/blob/v0.1.1/CHANGELOG.md",
     "samples": [
         {
             "displayName": "Integração Básica",

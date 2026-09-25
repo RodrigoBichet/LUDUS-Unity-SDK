@@ -2,6 +2,16 @@
 
 Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquivo.
 
+## [0.1.1] - 2026-09-25
+
+### Alterado
+
+- O botão **Documentation** do Package Manager passa a abrir o guia renderizado
+  no navegador, preservando o arquivo Markdown do pacote como fallback offline.
+- O botão **Changelog** passa a abrir o histórico da versão no navegador.
+- As instruções de instalação passam a usar a tag fixa da versão de avaliação,
+  em vez de acompanhar alterações futuras da branch `main`.
+
 ## [0.1.0] - 2026-09-25
 
 ### Alterado
