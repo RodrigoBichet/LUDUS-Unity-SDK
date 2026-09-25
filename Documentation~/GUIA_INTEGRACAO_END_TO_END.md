@@ -18,8 +18,9 @@ Ao terminar, o jogo deverá:
 4. ter esse JSON validado e importado no LUDUS Acompanha;
 5. exibir a sessão e o mapa de interações no Dashboard.
 
-O SDK não adivinha acertos, erros, fases ou objetivos. Informações semânticas só
-podem existir quando o próprio jogo as fornece explicitamente.
+Esta versão de avaliação não registra acertos, erros, fases, categorias ou
+objetivos pedagógicos. O escopo validado é a coleta das interações observáveis
+descritas neste guia.
 
 ### Caminho mínimo
 
@@ -100,17 +101,18 @@ Selecione o objeto **LUDUS SDK** e configure o Inspector:
 | **Capturar automaticamente em** | todas as cenas ou somente as selecionadas |
 
 Em **Conexão com ambiente LUDUS (avançado)**, deixe a URL vazia no fluxo de
-importação manual. Quando o envio direto for configurado futuramente, a URL
-deverá conter somente a origem do backend, sem acrescentar `/api`.
+importação manual. Se optar pelo envio direto em um ambiente autorizado, a URL
+deve conter somente a origem do backend, sem acrescentar `/api`.
 
 Se escolher **Somente cenas selecionadas**, adicione todas as cenas de atividade
 que realmente devem ser acompanhadas. Os nomes precisam corresponder às cenas
 do projeto e essas cenas também precisam estar no Build Profile.
 
-Em **Coleta essencial**, habilite apenas o que o jogo realmente oferece. Para a
-primeira validação, cliques, trajetória do ponteiro e arrastes são suficientes.
-Não marque recursos avançados como acerto/erro, categorias ou fases apenas para
-fazê-los aparecer no JSON: essas capacidades exigem eventos que o jogo forneça.
+Em **Coleta essencial**, habilite apenas o que deseja registrar: cliques,
+trajetória do ponteiro e arrastes. O Inspector desta versão apresenta somente
+recursos cuja coleta está disponível. Outros campos permanecem no contrato JSON
+por compatibilidade, desativados e sem exigir configuração da pessoa
+desenvolvedora.
 
 Se a base já existia e o sistema de entrada do projeto mudou, selecione-a e use
 **GameObject > LUDUS > Atualizar coletor de mouse da base selecionada**.
@@ -302,7 +304,7 @@ eventos semânticos que tenham sido informados explicitamente pelo jogo.
 - O SDK coleta evidências de interação e apoia o acompanhamento pedagógico; ele
   não diagnostica, classifica clinicamente nem mede aprendizagem de forma
   conclusiva.
-- Acertos, erros, fases, categorias e objetivos não podem ser deduzidos apenas
-  por cliques ou imagens. O jogo precisa emitir esses eventos explicitamente.
+- Acertos, erros, fases, categorias e objetivos pedagógicos estão fora do
+  escopo desta versão de avaliação e permanecem desativados no contrato.
 - Testar no Editor é necessário, mas o aceite final de uma integração WebGL
   exige um Build And Run e a validação do JSON no Dashboard.

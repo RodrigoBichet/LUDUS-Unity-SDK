@@ -831,7 +831,12 @@ public void SessionLifecycle_ComContextoAtivo_RegistraTrajetoriaDeArraste()
             Assert.That(config.capabilities.mousePath, Is.True);
             Assert.That(config.capabilities.customEvents, Is.True);
             Assert.That(config.capabilities.dragPath, Is.True);
+            Assert.That(config.capabilities.screenshots, Is.False);
             Assert.That(config.capabilities.inactivity, Is.False);
+            Assert.That(config.capabilities.focusEvents, Is.False);
+            Assert.That(config.capabilities.phaseEvents, Is.False);
+            Assert.That(config.capabilities.correctWrong, Is.False);
+            Assert.That(config.capabilities.categoryEvents, Is.False);
 
             Object.DestroyImmediate(config);
         }

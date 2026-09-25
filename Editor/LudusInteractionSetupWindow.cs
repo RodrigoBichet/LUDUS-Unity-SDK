@@ -533,7 +533,7 @@ namespace LudusSDK.Editor
             {
                 EditorUtility.DisplayDialog(
                     "Interações LUDUS",
-                    "O objeto selecionado ainda não possui um componente Button. Nesta primeira etapa, o acompanhamento automático aceita botões da interface da Unity.",
+                    "O objeto selecionado não possui um componente Button. O acompanhamento automático de botões aceita componentes Button da interface Unity. Para outros elementos, adicione o objeto como clicável ou arrastável.",
                     "Entendi"
                 );
                 return;

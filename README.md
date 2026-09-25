@@ -7,7 +7,7 @@ O LUDUS Acompanha oferece evidências parciais para acompanhamento e mediação
 docente. Ele não diagnostica, classifica clinicamente nem produz avaliação
 conclusiva de aprendizagem.
 
-> O SDK está em evolução. Antes de usar em coleta real, valide a integração
+> Esta é uma versão de avaliação. Antes de qualquer coleta, valide a integração
 > com identidades fictícias, o fluxo do jogo e o build WebGL.
 
 ## Comece por aqui
@@ -27,8 +27,9 @@ está conhecendo o SDK pela primeira vez.
 - envia para `POST /api/sessions` quando há ambiente configurado;
 - preserva fallback local quando está offline ou o envio falha.
 
-O SDK **não** interpreta regras pedagógicas do jogo. Acertos, erros, fases,
-categorias e objetivos devem ser informados pelo próprio jogo, quando houver.
+O SDK **não** interpreta regras pedagógicas do jogo. Esta versão de avaliação
+concentra-se nas interações observáveis e nos elementos explicitamente
+acompanhados pela pessoa desenvolvedora.
 
 ## Requisitos
 
@@ -305,7 +306,8 @@ ao repositório.
 
 O SDK preserva o contrato LUDUS, incluindo `schemaVersion`, `captureMode`,
 `source`, `capabilities`, `studentId`, `playerId`, `gameId`, métricas,
-cliques, trajetórias, eventos e screenshots. O modo deste pacote é
+cliques, trajetórias e eventos. Campos reservados pelo contrato permanecem
+desativados quando não possuem coleta nesta versão. O modo deste pacote é
 `"captureMode":"sdk"`.
 
 Mudanças no payload devem ser avaliadas junto do backend e Dashboard LUDUS

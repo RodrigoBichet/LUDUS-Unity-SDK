@@ -252,7 +252,6 @@ namespace LudusSDK.Editor
     [CustomEditor(typeof(LudusSdkConfig))]
     public sealed class LudusSdkConfigEditor : UnityEditor.Editor
     {
-        private static bool showAdvancedCollectionOptions;
         private static bool showAdvancedConnectionOptions;
 
         public override void OnInspectorGUI()
@@ -260,7 +259,7 @@ namespace LudusSDK.Editor
             serializedObject.Update();
 
             EditorGUILayout.HelpBox(
-                "Preencha o nome do jogo. O SDK gera internamente o identificador técnico exigido pelo contrato e usa versão 1.0.0 até uma edição futura do jogo ser distribuída.",
+                "Preencha o nome do jogo. O SDK gera internamente o identificador técnico exigido pelo contrato e registra a versão do jogo como 1.0.0.",
                 MessageType.Info
             );
 
@@ -321,38 +320,6 @@ namespace LudusSDK.Editor
                 "Os recortes de observação por Canvas, painel ou atividade são registrados automaticamente quando você adiciona LudusCaptureContextTrigger ao objeto desejado.",
                 MessageType.None
             );
-
-            EditorGUILayout.Space();
-            showAdvancedCollectionOptions = EditorGUILayout.Foldout(
-                showAdvancedCollectionOptions,
-                "Opções avançadas (em evolução)",
-                true
-            );
-
-            if (showAdvancedCollectionOptions)
-            {
-                EditorGUI.indentLevel++;
-                EditorGUILayout.HelpBox(
-                    "Habilite somente recursos que já tenham sido integrados ao seu jogo. Capturas visuais, pausas e eventos semânticos continuam opt-in nesta versão.",
-                    MessageType.Warning
-                );
-                DrawCapability(capabilities, "screenshots", "Capturas de tela");
-                DrawCapability(capabilities, "inactivity", "Períodos de inatividade");
-                DrawCapability(capabilities, "focusEvents", "Mudanças de foco");
-                DrawCapability(capabilities, "phaseEvents", "Eventos de fase informados pelo jogo");
-                DrawCapability(capabilities, "correctWrong", "Acertos e erros informados pelo jogo");
-                DrawCapability(capabilities, "categoryEvents", "Categorias informadas pelo jogo");
-
-                if (capabilities.FindPropertyRelative("inactivity").boolValue)
-                {
-                    DrawProperty(
-                        "inactivityThresholdSeconds",
-                        "Tempo para considerar inatividade (segundos)"
-                    );
-                }
-
-                EditorGUI.indentLevel--;
-            }
 
             EditorGUILayout.Space();
             DrawProperty("debugMode", "Exibir mensagens detalhadas no Console");

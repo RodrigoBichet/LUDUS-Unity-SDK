@@ -2,7 +2,14 @@
 
 Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquivo.
 
-## [Unreleased]
+## [0.1.0] - 2026-09-25
+
+### Alterado
+
+- O Inspector da versão de avaliação apresenta somente recursos com coleta
+  disponível e mantém capacidades reservadas desativadas no contrato.
+- Textos do Editor e da documentação deixam de sugerir recursos futuros ou
+  incompletos para a pessoa desenvolvedora avaliadora.
 
 ### Adicionado
 
@@ -32,8 +39,8 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 - Assistente de criação e rótulos em português para a configuração pelo Inspector.
 - A base de coleta agora cria e conecta automaticamente a configuração do jogo.
 - Configuração simplificada com nome do jogo, envio à plataforma e cópia local opcional.
-- Capacidades ainda não implementadas deixam de ser habilitadas por padrão.
-- Inspector separa coleta essencial de opções avançadas e explica o destino da sessão.
+- Capacidades sem coletor nesta versão permanecem desativadas por padrão.
+- Inspector apresenta a coleta disponível e explica o destino da sessão.
 - Recortes localizam a base LUDUS automaticamente e usam o nome do objeto como título padrão.
 - Amostra de laboratório também localiza automaticamente a base LUDUS.
 - Amostra abre seu recorte fictício automaticamente ao iniciar a sessão.

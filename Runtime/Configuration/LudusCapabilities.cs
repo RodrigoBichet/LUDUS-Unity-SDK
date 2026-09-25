@@ -17,24 +17,24 @@ namespace LudusSDK
         [Tooltip("Registra automaticamente início, percurso e fim de arrastes.")]
         public bool dragPath = true;
 
-        [Tooltip("Permite capturas de imagem da sessão.")]
+        [Tooltip("Campo reservado pelo contrato. Esta versão não coleta capturas de imagem automaticamente.")]
         public bool screenshots = false;
 
-        [Tooltip("Registra períodos de inatividade.")]
+        [Tooltip("Campo reservado pelo contrato. Esta versão não registra períodos de inatividade automaticamente.")]
         public bool inactivity = false;
 
-        [Tooltip("Registra ganho ou perda de foco quando disponível.")]
+        [Tooltip("Campo reservado pelo contrato. Esta versão não registra mudanças de foco automaticamente.")]
         public bool focusEvents = false;
 
         [Header("Eventos informados pelo jogo")]
 
-        [Tooltip("O jogo informa início ou conclusão de fases.")]
+        [Tooltip("Campo reservado pelo contrato. Esta versão não oferece uma integração específica para fases.")]
         public bool phaseEvents = false;
 
-        [Tooltip("O jogo informa acertos e erros.")]
+        [Tooltip("Campo reservado pelo contrato. Esta versão não oferece uma integração específica para acertos e erros.")]
         public bool correctWrong = false;
 
-        [Tooltip("O jogo informa categorias ou módulos.")]
+        [Tooltip("Campo reservado pelo contrato. Esta versão não oferece uma integração específica para categorias.")]
         public bool categoryEvents = false;
 
         [Tooltip("O jogo pode registrar eventos semânticos próprios.")]
