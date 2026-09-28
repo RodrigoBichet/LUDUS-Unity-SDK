@@ -8,6 +8,10 @@ namespace LudusSDK
     /// </summary>
     public sealed class LudusTutorialTestPanel : MonoBehaviour
     {
+        private const float MinimumPanelWidth = 520f;
+        private const float MaximumPanelWidth = 720f;
+        private const float BasePanelHeight = 300f;
+
         [Header("Identificação do teste")]
 
         [InspectorName("Nome exibido no arquivo (opcional)")]
@@ -24,26 +28,103 @@ namespace LudusSDK
             bool hasActiveSession =
                 controller != null && controller.HasActiveSession;
 
-            GUI.Box(
-                new Rect(16, 16, 380, 170),
-                "LUDUS — Tutorial de teste"
+            float scale = Mathf.Clamp(Screen.height / 1080f, 0.8f, 1.25f);
+            float horizontalMargin = Mathf.Clamp(
+                Screen.width * 0.025f,
+                16f,
+                40f
             );
-            GUI.Label(
-                new Rect(32, 48, 348, 38),
-                "Este painel existe apenas nesta cena tutorial. " +
-                "Ele não será adicionado ao seu jogo."
+            float verticalMargin = Mathf.Clamp(
+                Screen.height * 0.025f,
+                16f,
+                32f
             );
+            float availableWidth = Mathf.Max(
+                1f,
+                Screen.width - horizontalMargin * 2f
+            );
+            float availableHeight = Mathf.Max(
+                1f,
+                Screen.height - verticalMargin * 2f
+            );
+            float panelWidth = Mathf.Min(
+                Mathf.Clamp(
+                    Screen.width * 0.38f,
+                    MinimumPanelWidth,
+                    MaximumPanelWidth
+                ),
+                availableWidth
+            );
+            float panelHeight = Mathf.Min(
+                BasePanelHeight * scale,
+                availableHeight
+            );
+            Rect panelRect = new Rect(
+                horizontalMargin,
+                verticalMargin,
+                panelWidth,
+                panelHeight
+            );
+
+            GUI.Box(panelRect, GUIContent.none);
+
+            float contentPadding = 24f * scale;
+            Rect contentRect = new Rect(
+                panelRect.x + contentPadding,
+                panelRect.y + contentPadding,
+                Mathf.Max(1f, panelRect.width - contentPadding * 2f),
+                Mathf.Max(1f, panelRect.height - contentPadding * 2f)
+            );
+
+            GUIStyle titleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = Mathf.RoundToInt(22f * scale),
+                fontStyle = FontStyle.Bold,
+                wordWrap = true,
+            };
+            GUIStyle bodyStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = Mathf.RoundToInt(16f * scale),
+                wordWrap = true,
+            };
+            GUIStyle statusStyle = new GUIStyle(bodyStyle)
+            {
+                fontStyle = FontStyle.Bold,
+            };
 
             string buttonLabel = hasActiveSession
                 ? "Encerrar sessão e exibir JSON"
                 : "Iniciar sessão fictícia";
 
-            if (GUI.Button(new Rect(32, 94, 348, 34), buttonLabel))
+            GUILayout.BeginArea(contentRect);
+            GUILayout.Label("LUDUS — Tutorial de teste", titleStyle);
+            GUILayout.Space(6f * scale);
+            GUILayout.Label(
+                "Esta cena é isolada e não altera as cenas do seu jogo.",
+                bodyStyle
+            );
+            GUILayout.Space(8f * scale);
+            GUILayout.Label(
+                "1. Inicie a sessão fictícia.\n"
+                    + "2. Mova o ponteiro e clique na Game View.\n"
+                    + "3. Encerre a sessão para gerar o JSON.",
+                bodyStyle
+            );
+            GUILayout.FlexibleSpace();
+
+            if (
+                GUILayout.Button(
+                    buttonLabel,
+                    GUILayout.Height(52f * scale)
+                )
+            )
             {
                 HandleSessionButton(hasActiveSession);
             }
 
-            GUI.Label(new Rect(32, 138, 348, 38), statusMessage);
+            GUILayout.Space(8f * scale);
+            GUILayout.Label(statusMessage, statusStyle);
+            GUILayout.EndArea();
         }
 
         private void HandleSessionButton(bool hasActiveSession)

@@ -48,7 +48,9 @@ namespace LudusSDK.Editor
             EditorGUIUtility.PingObject(root);
             EditorUtility.DisplayDialog(
                 "Tutorial LUDUS",
-                "Cena criada. Pressione Play e use os botões para testar a coleta sem alterar o seu jogo.",
+                "A cena de tutorial foi criada em Assets/LUDUS/Tutorial. "
+                    + "Ela é isolada e não modifica as cenas do seu jogo. "
+                    + "Pressione Play e siga as instruções exibidas na Game View para testar o SDK.",
                 "Entendi"
             );
         }
