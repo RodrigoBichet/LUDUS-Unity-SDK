@@ -38,6 +38,10 @@ Se você já conhece Unity, o fluxo completo pode ser resumido assim:
 ## 1. Preparar o ambiente
 
 - Use Unity 6.
+- Este roteiro visual foi validado na **Unity 6.3 LTS (6000.3.25f1)**. Em
+  outras versões, nomes e posições de menus podem variar; nessa versão, por
+  exemplo, os elementos de interface aparecem como **UI (Canvas)** no menu de
+  contexto da Hierarchy.
 - Trabalhe em uma cópia limpa ou branch de integração do jogo.
 - Confirme que o projeto abre e executa antes de instalar o SDK.
 - Confirme que todas as cenas usadas estão no **Build Profile** do projeto.
@@ -69,11 +73,49 @@ Antes de mexer no jogo real:
 1. Abra **LUDUS > Criar tutorial de teste do SDK**.
 2. Confirme a criação dos arquivos em `Assets/LUDUS/Tutorial/`.
 3. Abra a cena `TutorialLudus` criada.
-4. Entre no Play Mode.
-5. Inicie a sessão fictícia pelos controles exibidos na aba **Game**.
-6. Clique, mova o ponteiro e use os elementos fictícios da cena.
-7. Encerre a sessão.
-8. Confirme no Console que foi produzido um JSON LUDUS.
+4. Selecione `Assets/LUDUS/Tutorial/ConfiguracaoTutorialLudus.asset` e observe
+   no Inspector que o tutorial usa o nome **Tutorial LUDUS**, não envia sessões
+   para a plataforma e preserva uma cópia local. Esse asset serve somente ao
+   exercício e não deve ser reutilizado como configuração do jogo real.
+5. Para praticar a configuração completa, use **LUDUS > Tutorial > Adicionar
+   exercício de interações**. Esse passo opcional cria, somente no tutorial,
+   um botão, um campo de texto e uma peça arrastável.
+6. Abra **LUDUS > Configurar interações desta cena** e adicione os três objetos
+   criados, arrastando cada um da Hierarchy para o campo **Arraste um objeto
+   aqui** da janela **Interações LUDUS**.
+7. Entre no Play Mode.
+8. Inicie a sessão fictícia pelos controles exibidos na aba **Game**.
+9. Clique no botão, conclua o campo de texto e arraste a peça.
+10. Antes de sair do Play Mode, clique em **Encerrar sessão e exibir JSON**.
+11. Confirme no Console que foi produzido um JSON LUDUS.
+
+Mais adiante, **LUDUS > Adicionar coleta ao meu jogo** criará um asset separado
+em `Assets/LUDUS/ConfiguracaoLudus.asset` — ou um nome numerado equivalente se
+já houver outro arquivo. É nele que você informará o nome do jogo real,
+selecionará as cenas acompanhadas e escolherá como entregar as sessões. O asset
+do tutorial permanece isolado, com dados fictícios e opções seguras para
+aprendizagem.
+
+O encerramento manual ainda dentro do Play Mode é o caminho recomendado, pois
+permite conferir imediatamente o JSON no Console. Se você interromper o Play
+Mode por engano com a sessão do tutorial ativa, o próprio painel encerra e
+serializa a sessão automaticamente para evitar a perda do teste. Essa proteção
+existe somente na cena tutorial; no jogo real, o encerramento deve continuar
+ligado explicitamente ao término ou cancelamento da atividade.
+
+O campo **Nome exibido no dashboard** começa preenchido com o nome do
+GameObject. Você pode substituí-lo por um texto mais legível sem renomear o
+objeto na Hierarchy e sem alterar o funcionamento do jogo. Por exemplo,
+`PecaArrastavelTutorial` pode aparecer como `Peça arrastável do tutorial`.
+
+A peça se movimenta graças a um componente exclusivo do tutorial. No jogo real,
+o SDK apenas observa e registra o gesto configurado; ele não move objetos nem
+define regras de destino, acerto ou erro.
+
+O painel do exercício permanece à direita porque o controle da sessão aparece
+à esquerda durante o Play. Não reposicione o Canvas pela aba Scene. O gerador
+também cria uma câmera neutra apenas para evitar a mensagem
+`No cameras rendering` na Game View.
 
 Esse teste comprova que o pacote funciona sem depender das regras do seu jogo.
 O tutorial é material de laboratório: depois da validação, não inclua

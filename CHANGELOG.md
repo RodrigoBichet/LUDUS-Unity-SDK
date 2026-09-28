@@ -2,6 +2,30 @@
 
 Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquivo.
 
+## [Não publicado]
+
+### Adicionado
+
+- Exercício opcional e isolado com botão, campo de texto e peça arrastável para
+  praticar a configuração antes de modificar o jogo real.
+- Comando **LUDUS > Tutorial > Adicionar exercício de interações**, seguro
+  contra duplicação dos objetos na cena tutorial.
+- Câmera neutra criada somente no tutorial para manter a Game View limpa sem
+  depender das cenas ou câmeras do jogo real.
+- Compatibilidade visual no Editor quando o novo Input System não encaminha a
+  posição do ponteiro ao EventSystem da cena tutorial.
+- Limites visuais do exercício de arraste passam a usar o mesmo espaço local
+  da área e da peça, impedindo que ela escape do painel.
+- Proteção exclusiva do tutorial que encerra e serializa uma sessão ainda ativa
+  quando a pessoa sai do Play Mode sem usar o botão de encerramento.
+
+### Alterado
+
+- A documentação esclarece que o nome exibido no Dashboard começa com o nome
+  do GameObject e pode ser personalizado sem alterar a Hierarchy.
+- O tutorial passa a orientar a inspeção do asset de configuração fictício e a
+  separá-lo explicitamente da configuração criada depois para o jogo real.
+
 ## [0.1.1] - 2026-09-25
 
 ### Alterado

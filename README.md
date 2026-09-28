@@ -37,6 +37,11 @@ acompanhados pela pessoa desenvolvedora.
 - acesso ao repositório GitHub do pacote;
 - projeto configurado para o alvo que pretende publicar, especialmente WebGL.
 
+O roteiro visual desta versão foi validado na **Unity 6.3 LTS
+(6000.3.25f1)**. Em outras versões, nomes e posições de menus podem variar. Por
+exemplo, nessa versão a criação de elementos de interface aparece no menu de
+contexto da Hierarchy como **UI (Canvas)**.
+
 O pacote usa o novo Input System quando ele está presente no projeto e o Input
 clássico como alternativa. Não é necessário alterar `ProjectSettings` para a
 integração básica.
@@ -83,19 +88,60 @@ de demonstração; não altera as cenas do jogo.
 Para validar no Editor:
 
 1. Abra `Assets/LUDUS/Tutorial/TutorialLudus.unity`.
-2. Pressione **Play**.
-3. Clique em **Iniciar sessão fictícia**.
-4. Mova o mouse e faça alguns cliques na Game View.
-5. Clique em **Encerrar sessão e exibir JSON**.
-6. Confira o JSON no Console e a cópia local em `ludus_offline`.
+2. No Project, selecione
+   `Assets/LUDUS/Tutorial/ConfiguracaoTutorialLudus.asset` e observe no
+   Inspector que o tutorial usa o nome **Tutorial LUDUS**, não envia sessões
+   para a plataforma e mantém uma cópia local. Esse asset pertence somente ao
+   tutorial; não o transforme na configuração do jogo real.
+3. Opcionalmente, use **LUDUS > Tutorial > Adicionar exercício de
+   interações** para criar um botão, um campo de texto e uma peça arrastável
+   dentro dessa cena isolada.
+4. Se adicionou o exercício, abra **LUDUS > Configurar interações desta cena**
+   e arraste `BotaoTutorial`, `CampoTextoTutorial` e
+   `PecaArrastavelTutorial` da Hierarchy para o campo **Arraste um objeto
+   aqui** da janela **Interações LUDUS**.
+5. Pressione **Play**.
+6. Clique em **Iniciar sessão fictícia**.
+7. Realize as interações apresentadas na Game View.
+8. Ainda no Play Mode, clique em **Encerrar sessão e exibir JSON**.
+9. Confira o JSON no Console e a cópia local em `ludus_offline`.
+
+Ao integrar o SDK ao jogo real, o comando **LUDUS > Adicionar coleta ao meu
+jogo** cria outro asset em `Assets/LUDUS/ConfiguracaoLudus.asset` — ou um nome
+numerado equivalente se já existir. Nesse novo asset, informe o nome do jogo,
+escolha as cenas acompanhadas e configure a forma de entrega adequada. Assim, a
+pessoa desenvolvedora pratica primeiro com dados fictícios e depois repete o
+mesmo conceito sem reutilizar a configuração do tutorial.
+
+Encerre a sessão antes de sair do Play Mode. Assim, o JSON aparece imediatamente
+no Console e você confirma visualmente que o teste terminou. Se o Play Mode for
+interrompido por engano enquanto a sessão do tutorial ainda estiver ativa, o
+painel encerra e serializa essa sessão automaticamente como proteção contra
+perda. Essa proteção pertence somente ao tutorial e não substitui o encerramento
+explícito no fluxo real do jogo.
+
+Ao adicionar uma interação, o SDK preenche inicialmente **Nome exibido no
+dashboard** com o nome do GameObject. Esse texto pode ser alterado para ficar
+mais legível sem renomear o objeto na Hierarchy e sem modificar o funcionamento
+do jogo.
+
+A peça do exercício se movimenta porque recebe um componente exclusivamente
+didático. O movimento visual continua sendo responsabilidade do jogo real; o
+componente `LudusTrackedDraggable` observa e registra o gesto, sem alterar as
+regras ou a posição dos objetos do jogo.
+
+O painel do exercício fica à direita de propósito. Durante o Play, o painel de
+controle da sessão aparece à esquerda. Não é necessário reposicionar o Canvas
+na aba Scene; a cena também recebe uma câmera neutra para a Game View não exibir
+`No cameras rendering`.
 
 Para validar no WebGL, adicione `TutorialLudus` ao Build Profile como primeira
 cena habilitada e use **Build And Run**. O JSON deve mostrar
 `"platform":"WebGLPlayer"`.
 
-Se quiser validar também a importação no Dashboard, informe no Inspector do
-painel tutorial o ID de um estudante **fictício** já criado no ambiente
-demonstrativo. O ID deve corresponder ao aluno escolhido no Dashboard.
+Se quiser validar também a importação manual no Dashboard, use o JSON fictício
+gerado pelo tutorial e escolha o destino somente dentro de um ambiente
+demonstrativo autorizado.
 
 > O painel do tutorial não é adicionado à integração real. Ele existe apenas
 > para aprender e validar o pacote sem poluir a interface do jogo.

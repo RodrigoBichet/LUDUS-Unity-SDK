@@ -2,7 +2,8 @@
   "name": "Ludus.Unity.Editor",
   "rootNamespace": "LudusSDK.Editor",
   "references": [
-    "Ludus.Unity"
+    "Ludus.Unity",
+    "Unity.ugui"
   ],
   "includePlatforms": [
     "Editor"

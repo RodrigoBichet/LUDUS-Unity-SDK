@@ -42,6 +42,7 @@ namespace LudusSDK.Editor
             GameObject root = CreateConfiguredCaptureBase(config);
             root.name = "LUDUS SDK — Tutorial";
             root.AddComponent<LudusTutorialTestPanel>();
+            LudusTutorialExerciseBuilder.EnsureTutorialCamera();
 
             EditorSceneManager.SaveScene(tutorialScene, TutorialScenePath);
             Selection.activeGameObject = root;
@@ -53,6 +54,12 @@ namespace LudusSDK.Editor
                     + "Pressione Play e siga as instruções exibidas na Game View para testar o SDK.",
                 "Entendi"
             );
+        }
+
+        [MenuItem("LUDUS/Tutorial/Adicionar exercício de interações", false, 20)]
+        private static void AddTutorialInteractionExercise()
+        {
+            LudusTutorialExerciseBuilder.AddToTutorial(TutorialScenePath);
         }
 
         [MenuItem("GameObject/LUDUS/Adicionar coleta ao meu jogo", false, 10)]

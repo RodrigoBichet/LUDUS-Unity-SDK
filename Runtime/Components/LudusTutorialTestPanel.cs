@@ -11,6 +11,7 @@ namespace LudusSDK
         private const float MinimumPanelWidth = 520f;
         private const float MaximumPanelWidth = 720f;
         private const float BasePanelHeight = 300f;
+        private const float ExercisePanelHeight = 365f;
 
         [Header("Identificação do teste")]
 
@@ -21,12 +22,46 @@ namespace LudusSDK
         private string statusMessage =
             "Pronto para iniciar uma sessão fictícia.";
 
+        private void OnApplicationQuit()
+        {
+            LudusSessionController controller =
+                FindFirstObjectByType<LudusSessionController>();
+
+            if (controller == null || !controller.HasActiveSession)
+            {
+                return;
+            }
+
+            bool ended = LudusSdk.TryEndSession(
+                out string json,
+                out string endError
+            );
+
+            if (ended)
+            {
+                Debug.Log(
+                    "[LUDUS] A sessão ativa do tutorial foi encerrada "
+                        + "automaticamente ao sair do Play Mode. JSON: "
+                        + json
+                );
+                return;
+            }
+
+            Debug.LogWarning(
+                "[LUDUS] Não foi possível encerrar automaticamente a "
+                    + "sessão do tutorial: "
+                    + endError
+            );
+        }
+
         private void OnGUI()
         {
             LudusSessionController controller =
                 FindFirstObjectByType<LudusSessionController>();
             bool hasActiveSession =
                 controller != null && controller.HasActiveSession;
+            bool hasInteractionExercise =
+                FindFirstObjectByType<LudusTutorialDraggableItem>() != null;
 
             float scale = Mathf.Clamp(Screen.height / 1080f, 0.8f, 1.25f);
             float horizontalMargin = Mathf.Clamp(
@@ -55,8 +90,11 @@ namespace LudusSDK
                 ),
                 availableWidth
             );
+            float desiredPanelHeight = hasInteractionExercise
+                ? ExercisePanelHeight
+                : BasePanelHeight;
             float panelHeight = Mathf.Min(
-                BasePanelHeight * scale,
+                desiredPanelHeight * scale,
                 availableHeight
             );
             Rect panelRect = new Rect(
@@ -104,12 +142,14 @@ namespace LudusSDK
                 bodyStyle
             );
             GUILayout.Space(8f * scale);
-            GUILayout.Label(
-                "1. Inicie a sessão fictícia.\n"
+            string instructions = hasInteractionExercise
+                ? "1. Inicie a sessão fictícia.\n"
+                    + "2. Clique no botão, conclua o campo de texto e arraste a peça.\n"
+                    + "3. Encerre a sessão antes de sair do Play Mode para conferir o JSON."
+                : "1. Inicie a sessão fictícia.\n"
                     + "2. Mova o ponteiro e clique na Game View.\n"
-                    + "3. Encerre a sessão para gerar o JSON.",
-                bodyStyle
-            );
+                    + "3. Encerre a sessão antes de sair do Play Mode para conferir o JSON.";
+            GUILayout.Label(instructions, bodyStyle);
             GUILayout.FlexibleSpace();
 
             if (
@@ -152,7 +192,7 @@ namespace LudusSDK
                 out string startError
             );
             statusMessage = started
-                ? "Sessão iniciada. Mova e clique dentro da Game View."
+                ? "Sessão iniciada. Realize as interações dentro da Game View."
                 : startError;
         }
     }
