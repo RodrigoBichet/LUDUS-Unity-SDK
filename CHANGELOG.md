@@ -4,6 +4,8 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 
 ## [Não publicado]
 
+## [0.1.2] - 2026-09-29
+
 ### Adicionado
 
 - Exercício opcional e isolado com botão, campo de texto e peça arrastável para

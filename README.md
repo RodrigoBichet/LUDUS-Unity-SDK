@@ -56,7 +56,7 @@ No projeto Unity que receberá o SDK:
 4. Informe:
 
    ```text
-   https://github.com/RodrigoBichet/LUDUS-Unity-SDK.git#v0.1.1
+   https://github.com/RodrigoBichet/LUDUS-Unity-SDK.git#v0.1.2
    ```
 
 5. Aguarde a Unity importar o pacote.
