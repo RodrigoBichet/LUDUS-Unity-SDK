@@ -25,6 +25,8 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
   do GameObject e pode ser personalizado sem alterar a Hierarchy.
 - O tutorial passa a orientar a inspeção do asset de configuração fictício e a
   separá-lo explicitamente da configuração criada depois para o jogo real.
+- A validação Web detalha a ativação do perfil, a lista de cenas, o primeiro
+  tempo de compilação e a execução isolada do tutorial.
 
 ## [0.1.1] - 2026-09-25
 

@@ -297,17 +297,34 @@ senhas ou credenciais.
 Antes de publicar:
 
 1. Abra **File > Build Profiles**.
-2. Selecione **Web** como plataforma ativa.
-3. Confirme que as cenas corretas estão habilitadas e na ordem esperada.
-4. Execute **Build And Run**.
-5. Faça ao menos um clique, movimento, início e encerramento de sessão.
-6. Confira no Console do navegador `platform: "WebGLPlayer"` e os eventos de
+2. Selecione **Web**. Se ainda não houver o selo **Active**, use **Switch
+   Profile** — algumas versões exibem **Switch Platform** — e aguarde a
+   importação e a compilação terminarem.
+3. Clique em **Open Scene List**. Com `TutorialLudus` aberta, use **Add Open
+   Scenes**, deixe somente essa cena habilitada e confirme que ela ocupa o
+   índice `0` durante o teste isolado.
+4. Volte ao perfil **Web** e confirme que **Code Optimization** está em
+   **Shorter Build Time** para esta validação.
+5. Execute **Build And Run**.
+6. Faça ao menos um clique, movimento, início e encerramento de sessão.
+7. Confira no JSON baixado `platform: "WebGLPlayer"` e os eventos de
    contexto esperados.
 
-O primeiro build WebGL — e builds após mudar de plataforma — pode levar mais
-tempo porque a Unity compila e prepara os artefatos do jogador. Consulte a
-documentação oficial sobre [introdução ao processo de build](https://docs.unity3d.com/6000.0/Documentation/Manual/building-introduction.html)
-e sobre [build para Web](https://docs.unity3d.com/6000.0/Documentation/Manual/webgl-building.html).
+O aviso **Cannot build player while editor is importing assets or compiling
+scripts** significa que a troca ainda está em andamento; aguarde até o botão de
+build ser habilitado. A primeira ativação de Web pode ser demorada porque a
+Unity reimporta os assets afetados pela plataforma e recompila os scripts. O
+primeiro build também precisa produzir todo o player Web; builds incrementais
+posteriores podem reutilizar conteúdo inalterado e tendem a ser mais rápidos.
+
+O tempo depende do tamanho do projeto, CPU, RAM disponível, velocidade do disco
+e processos concorrentes. A internet normalmente não participa do build local,
+exceto quando a Unity precisa baixar pacotes ou quando a pessoa escolhe publicar
+em um serviço online. Fechar aplicativos pesados pode ajudar se o computador
+estiver com pouca memória. Consulte a documentação oficial sobre
+[troca de perfil](https://docs.unity3d.com/6000.0/Documentation/Manual/create-build-profile.html),
+[configurações do build Web](https://docs.unity3d.com/6000.0/Documentation/Manual/web-build-settings.html)
+e [reutilização incremental do conteúdo](https://docs.unity3d.com/6000.0/Documentation/Manual/build-scripts-only.html).
 
 ## Solução de problemas
 

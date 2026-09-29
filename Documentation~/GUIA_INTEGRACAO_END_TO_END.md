@@ -279,14 +279,37 @@ correspondentes às capacidades habilitadas.
 
 ## 8. Validar no WebGL
 
-1. Abra **File > Build Profiles** e selecione o perfil **Web**.
-2. Confirme que as cenas do fluxo estão incluídas e na ordem correta.
-3. Confirme no asset LUDUS que **Baixar arquivo JSON ao encerrar (WebGL)** está
+1. Abra **File > Build Profiles** e selecione **Web** na lista de plataformas.
+2. Se Web ainda não tiver o selo **Active**, clique em **Switch Profile** — a
+   interface de algumas versões usa **Switch Platform** — e aguarde a troca de
+   plataforma terminar.
+3. Clique em **Open Scene List**. Com `TutorialLudus` aberta, use **Add Open
+   Scenes**, desabilite ou remova as demais cenas para este teste isolado e
+   deixe `TutorialLudus` habilitada no índice `0`.
+4. Volte ao perfil **Web** e use **Shorter Build Time** em **Code
+   Optimization** durante a validação.
+5. Confirme no asset LUDUS que **Baixar arquivo JSON ao encerrar (WebGL)** está
    marcado.
-4. Execute **Build And Run**.
-5. Repita o fluxo completo no navegador.
-6. Encerre a sessão por uma ação do usuário e confirme o download do JSON.
-7. Guarde o arquivo apenas durante o teste.
+6. Execute **Build And Run**.
+7. Repita o fluxo completo no navegador.
+8. Encerre a sessão pelo botão ainda dentro da página e confirme o download do
+   JSON. Fechar a aba não substitui essa ação explícita.
+9. Guarde o arquivo apenas durante o teste.
+
+Durante a primeira troca para Web, é normal o botão de build ficar indisponível
+com o aviso **Cannot build player while editor is importing assets or compiling
+scripts**. A Unity precisa reimportar assets dependentes da plataforma e
+recompilar scripts antes do build. O primeiro build Web também gera o player
+completo; execuções incrementais posteriores podem reutilizar conteúdo que não
+mudou e costumam ser mais rápidas.
+
+Projetos maiores e computadores com CPU, RAM ou disco mais ocupados podem levar
+mais tempo. A conexão de internet normalmente não afeta um build local já
+configurado, salvo quando ainda é necessário baixar pacotes ou quando o destino
+é um serviço de publicação online. Consulte a documentação oficial sobre
+[troca de perfil](https://docs.unity3d.com/6000.0/Documentation/Manual/create-build-profile.html),
+[configurações do build Web](https://docs.unity3d.com/6000.0/Documentation/Manual/web-build-settings.html)
+e [builds incrementais](https://docs.unity3d.com/6000.0/Documentation/Manual/build-scripts-only.html).
 
 O teste no Editor não substitui o WebGL: foco, coordenadas, download e sistema
 de entrada podem se comportar de forma diferente no navegador.
