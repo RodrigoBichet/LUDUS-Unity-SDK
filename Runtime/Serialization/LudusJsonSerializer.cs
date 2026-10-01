@@ -352,24 +352,97 @@ builder.Append('}');
             out string errorMessage
         )
         {
+            if (session.screenshots.Count > 20)
+            {
+                errorMessage =
+                    "screenshots excede o limite de 20 itens por sessão.";
+                return false;
+            }
+
+            int totalBase64Length = 0;
+
             foreach (LudusScreenshot screenshot in session.screenshots)
             {
+                bool hasBase64 =
+                    !string.IsNullOrWhiteSpace(screenshot?.screenshotBase64);
+                bool hasPath =
+                    !string.IsNullOrWhiteSpace(screenshot?.caminho);
+
                 if (
                     screenshot == null ||
-                    screenshot.faseIndex < 0 ||
+                    screenshot.faseIndex < -1 ||
                     screenshot.timestamp < 0 ||
                     screenshot.timestamp > session.durationMs ||
-                    string.IsNullOrWhiteSpace(screenshot.caminho) ||
-                    screenshot.caminho.Length > 2048
+                    (
+                        screenshot.faseIndex < 0 &&
+                        string.IsNullOrWhiteSpace(
+                            screenshot.contextInstanceId
+                        )
+                    ) ||
+                    (
+                        !string.IsNullOrWhiteSpace(
+                            screenshot.contextInstanceId
+                        ) &&
+                        screenshot.contextInstanceId.Length > 128
+                    ) ||
+                    (
+                        !string.IsNullOrWhiteSpace(screenshot.phaseId) &&
+                        screenshot.phaseId.Length > 100
+                    ) ||
+                    (!hasBase64 && !hasPath) ||
+                    (hasPath && screenshot.caminho.Length > 2048)
                 )
                 {
                     errorMessage = "screenshots possui item inválido.";
                     return false;
                 }
+
+                if (
+                    hasBase64 &&
+                    (
+                        screenshot.mimeType != "image/jpeg" ||
+                        screenshot.widthPx < 1 ||
+                        screenshot.widthPx > 8192 ||
+                        screenshot.heightPx < 1 ||
+                        screenshot.heightPx > 8192 ||
+                        screenshot.screenshotBase64.Length > 2800000 ||
+                        !HasValidBase64(screenshot.screenshotBase64)
+                    )
+                )
+                {
+                    errorMessage =
+                        "screenshots possui uma imagem JPEG inválida.";
+                    return false;
+                }
+
+                if (hasBase64)
+                {
+                    totalBase64Length += screenshot.screenshotBase64.Length;
+
+                    if (totalBase64Length > 11200000)
+                    {
+                        errorMessage =
+                            "screenshots excede o limite total permitido.";
+                        return false;
+                    }
+                }
             }
 
             errorMessage = string.Empty;
             return true;
+        }
+
+        private static bool HasValidBase64(string value)
+        {
+            try
+            {
+                Convert.FromBase64String(value);
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
         }
 
         private static bool HasValidPoint(
@@ -694,8 +767,34 @@ builder.Append('}');
                     WriteProperty(builder, "phaseId", screenshot.phaseId, true);
                 }
 
+                if (!string.IsNullOrWhiteSpace(screenshot.contextInstanceId))
+                {
+                    WriteProperty(
+                        builder,
+                        "contextInstanceId",
+                        screenshot.contextInstanceId,
+                        true
+                    );
+                }
+
                 WriteProperty(builder, "timestamp", screenshot.timestamp, true);
-                WriteProperty(builder, "caminho", screenshot.caminho, false);
+
+                if (!string.IsNullOrWhiteSpace(screenshot.screenshotBase64))
+                {
+                    WriteProperty(builder, "mimeType", screenshot.mimeType, true);
+                    WriteProperty(builder, "widthPx", screenshot.widthPx, true);
+                    WriteProperty(builder, "heightPx", screenshot.heightPx, true);
+                    WriteProperty(
+                        builder,
+                        "screenshotBase64",
+                        screenshot.screenshotBase64,
+                        false
+                    );
+                }
+                else
+                {
+                    WriteProperty(builder, "caminho", screenshot.caminho, false);
+                }
 
                 builder.Append('}');
             }

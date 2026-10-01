@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using LudusSDK;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -119,6 +120,71 @@ namespace LudusSDK.Editor
 
             Selection.activeGameObject = root;
             EditorGUIUtility.PingObject(root);
+        }
+
+        [MenuItem("GameObject/LUDUS/Marcar como área de observação", false, 12)]
+        private static void MarkSelectedAsObservationArea()
+        {
+            GameObject selectedObject = Selection.activeGameObject;
+            LudusCaptureContextTrigger trigger = ConfigureObservationArea(
+                selectedObject
+            );
+
+            if (trigger == null)
+            {
+                return;
+            }
+
+            Selection.activeGameObject = selectedObject;
+            EditorGUIUtility.PingObject(selectedObject);
+        }
+
+        [MenuItem("GameObject/LUDUS/Marcar como área de observação", true)]
+        private static bool CanMarkSelectedAsObservationArea()
+        {
+            GameObject selectedObject = Selection.activeGameObject;
+            return selectedObject != null &&
+                selectedObject.scene.IsValid() &&
+                !EditorUtility.IsPersistent(selectedObject);
+        }
+
+        internal static LudusCaptureContextTrigger ConfigureObservationArea(
+            GameObject targetObject
+        )
+        {
+            if (
+                targetObject == null ||
+                !targetObject.scene.IsValid() ||
+                EditorUtility.IsPersistent(targetObject)
+            )
+            {
+                return null;
+            }
+
+            LudusCaptureContextTrigger trigger =
+                targetObject.GetComponent<LudusCaptureContextTrigger>();
+
+            if (trigger == null)
+            {
+                trigger = Undo.AddComponent<LudusCaptureContextTrigger>(
+                    targetObject
+                );
+            }
+            else
+            {
+                Undo.RecordObject(trigger, "Marcar área de observação LUDUS");
+            }
+
+            trigger.captureVisualReference = true;
+            trigger.contextKind =
+                targetObject.GetComponent<Canvas>() != null ||
+                targetObject.GetComponentInParent<Canvas>() != null
+                    ? LudusCaptureContextKind.Canvas
+                    : LudusCaptureContextKind.Activity;
+
+            EditorUtility.SetDirty(trigger);
+            EditorSceneManager.MarkSceneDirty(targetObject.scene);
+            return trigger;
         }
 
         private static void AddPreferredPointerTracker(
@@ -326,9 +392,49 @@ namespace LudusSDK.Editor
             DrawCapability(capabilities, "mousePath", "Trajetória do mouse");
             DrawCapability(capabilities, "dragPath", "Trajetória de arraste");
             EditorGUILayout.HelpBox(
-                "Os recortes de observação por Canvas, painel ou atividade são registrados automaticamente quando você adiciona LudusCaptureContextTrigger ao objeto desejado.",
+                "O SDK acompanha as interações por cena automaticamente. Se uma mesma cena possuir telas ou atividades internas diferentes, você poderá marcá-las opcionalmente na seção de capturas visuais.",
                 MessageType.None
             );
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField(
+                "Capturas visuais",
+                EditorStyles.boldLabel
+            );
+            DrawCapability(
+                capabilities,
+                "screenshots",
+                "Capturar imagem da tela"
+            );
+
+            if (capabilities.FindPropertyRelative("screenshots").boolValue)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty(
+                    "captureScreenshotOnContextStart",
+                    "Capturar ao iniciar cada recorte"
+                );
+                EditorGUI.indentLevel--;
+
+                DrawProperty(
+                    "sceneScreenshotMode",
+                    "Imagens automáticas nas cenas"
+                );
+                DrawScreenshotSceneSelection();
+                DrawObservationAreaSelection();
+
+                EditorGUILayout.HelpBox(
+                    "A imagem pode registrar conteúdo visível do jogo. Habilite somente quando houver finalidade definida e autorização adequada. O SDK mantém uma imagem por cena ou recorte e conserva até quatro, priorizando os locais com mais interações e usando o tempo como desempate.",
+                    MessageType.Warning
+                );
+            }
+            else
+            {
+                EditorGUILayout.HelpBox(
+                    "Desativado por padrão para reduzir o payload e preservar a privacidade. Quando habilitado, o mapa da sessão pode usar a imagem como fundo.",
+                    MessageType.Info
+                );
+            }
 
             EditorGUILayout.Space();
             DrawProperty("debugMode", "Exibir mensagens detalhadas no Console");
@@ -364,48 +470,435 @@ namespace LudusSDK.Editor
             SerializedProperty selectedSceneNames =
                 serializedObject.FindProperty("selectedSceneNames");
             EditorGUILayout.HelpBox(
-                "Marque as cenas do Build Profile que devem ser acompanhadas. Nas demais cenas, o SDK mantém a sessão ativa, mas pausa mouse e cliques.",
+                "Arraste do Project somente as cenas que devem ser acompanhadas. Nas demais cenas, o SDK mantém a sessão ativa, mas pausa mouse e cliques.",
                 MessageType.Info
             );
 
-            EditorBuildSettingsScene[] buildScenes =
-                EditorBuildSettings.scenes;
-            bool hasEnabledScene = false;
+            DrawSceneAssetList(
+                selectedSceneNames,
+                "Nenhuma cena selecionada. Arraste uma cena do Project para começar.",
+                false
+            );
+            RemoveUntrackedScreenshotScenes();
+        }
 
-            foreach (EditorBuildSettingsScene buildScene in buildScenes)
+        private void DrawScreenshotSceneSelection()
+        {
+            SerializedProperty screenshotMode =
+                serializedObject.FindProperty("sceneScreenshotMode");
+
+            if (
+                screenshotMode.enumValueIndex !=
+                (int)LudusSceneScreenshotMode.SelectedScenes
+            )
             {
-                if (!buildScene.enabled)
+                return;
+            }
+
+            SerializedProperty screenshotScenes =
+                serializedObject.FindProperty(
+                    "selectedScreenshotSceneNames"
+                );
+
+            EditorGUILayout.HelpBox(
+                "Arraste do Project somente cenas acompanhadas cuja imagem ajude a interpretar o mapa.",
+                MessageType.Info
+            );
+
+            DrawSceneAssetList(
+                screenshotScenes,
+                "Nenhuma cena usa imagem automática. Arraste aqui uma cena acompanhada.",
+                true
+            );
+        }
+
+        private void DrawSceneAssetList(
+            SerializedProperty sceneNames,
+            string emptyMessage,
+            bool requireTrackedScene
+        )
+        {
+            List<string> scenesOutsideBuild = new List<string>();
+            List<string> missingScenes = new List<string>();
+
+            for (int index = 0; index < sceneNames.arraySize; index++)
+            {
+                string sceneName = sceneNames
+                    .GetArrayElementAtIndex(index)
+                    .stringValue;
+                SceneAsset sceneAsset = FindSceneAsset(sceneName);
+
+                EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+                GUIContent sceneLabel = new GUIContent(
+                    sceneName,
+                    EditorGUIUtility.IconContent("SceneAsset Icon").image
+                );
+                EditorGUILayout.LabelField(sceneLabel);
+
+                using (new EditorGUI.DisabledScope(sceneAsset == null))
+                {
+                    if (GUILayout.Button("Localizar", GUILayout.Width(70f)))
+                    {
+                        Selection.activeObject = sceneAsset;
+                        EditorGUIUtility.PingObject(sceneAsset);
+                    }
+                }
+
+                if (GUILayout.Button("Remover", GUILayout.Width(70f)))
+                {
+                    sceneNames.DeleteArrayElementAtIndex(index);
+                    EditorGUILayout.EndHorizontal();
+                    return;
+                }
+
+                EditorGUILayout.EndHorizontal();
+
+                if (sceneAsset == null)
+                {
+                    missingScenes.Add(sceneName);
+                }
+                else if (!IsSceneInEnabledBuildProfile(sceneName))
+                {
+                    scenesOutsideBuild.Add(sceneName);
+                }
+            }
+
+            if (sceneNames.arraySize == 0)
+            {
+                EditorGUILayout.HelpBox(emptyMessage, MessageType.None);
+            }
+
+            DrawSceneDropArea(sceneNames, requireTrackedScene);
+
+            if (missingScenes.Count > 0)
+            {
+                EditorGUILayout.HelpBox(
+                    "Não foi possível localizar no Project: " +
+                        string.Join(", ", missingScenes) +
+                        ". Remova a referência ou restaure a cena.",
+                    MessageType.Warning
+                );
+            }
+
+            if (scenesOutsideBuild.Count > 0)
+            {
+                EditorGUILayout.HelpBox(
+                    "Fora do Build Profile: " +
+                        string.Join(", ", scenesOutsideBuild) +
+                        ". A seleção foi salva, mas a cena precisa entrar no Build Profile para fazer parte do jogo publicado.",
+                    MessageType.Warning
+                );
+            }
+        }
+
+        private void DrawSceneDropArea(
+            SerializedProperty sceneNames,
+            bool requireTrackedScene
+        )
+        {
+            Rect dropArea = GUILayoutUtility.GetRect(
+                0f,
+                52f,
+                GUILayout.ExpandWidth(true)
+            );
+            GUI.Box(
+                dropArea,
+                "Arraste aqui cenas do Project",
+                EditorStyles.helpBox
+            );
+
+            Event currentEvent = Event.current;
+            if (
+                !dropArea.Contains(currentEvent.mousePosition) ||
+                (currentEvent.type != EventType.DragUpdated &&
+                    currentEvent.type != EventType.DragPerform)
+            )
+            {
+                return;
+            }
+
+            bool hasSceneAsset = false;
+            foreach (UnityEngine.Object draggedObject in DragAndDrop.objectReferences)
+            {
+                if (draggedObject is SceneAsset)
+                {
+                    hasSceneAsset = true;
+                    break;
+                }
+            }
+
+            if (!hasSceneAsset)
+            {
+                DragAndDrop.visualMode = DragAndDropVisualMode.Rejected;
+                return;
+            }
+
+            DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+            if (currentEvent.type != EventType.DragPerform)
+            {
+                currentEvent.Use();
+                return;
+            }
+
+            DragAndDrop.AcceptDrag();
+            List<string> rejectedScenes = new List<string>();
+
+            foreach (UnityEngine.Object draggedObject in DragAndDrop.objectReferences)
+            {
+                SceneAsset sceneAsset = draggedObject as SceneAsset;
+                if (sceneAsset == null)
                 {
                     continue;
                 }
 
-                hasEnabledScene = true;
+                string scenePath = AssetDatabase.GetAssetPath(sceneAsset);
                 string sceneName = System.IO.Path.GetFileNameWithoutExtension(
-                    buildScene.path
-                );
-                bool selected = ContainsSceneName(selectedSceneNames, sceneName);
-                bool nextSelected = EditorGUILayout.ToggleLeft(
-                    sceneName,
-                    selected
+                    scenePath
                 );
 
-                if (nextSelected != selected)
+                if (requireTrackedScene && !IsSceneTracked(sceneName))
                 {
-                    SetSceneSelected(
-                        selectedSceneNames,
-                        sceneName,
-                        nextSelected
-                    );
+                    rejectedScenes.Add(sceneName);
+                    continue;
+                }
+
+                SetSceneSelected(sceneNames, sceneName, true);
+            }
+
+            if (rejectedScenes.Count > 0)
+            {
+                Debug.LogWarning(
+                    "[LUDUS] As cenas " +
+                        string.Join(", ", rejectedScenes) +
+                        " não foram adicionadas às imagens porque ainda não são cenas acompanhadas."
+                );
+            }
+
+            currentEvent.Use();
+        }
+
+        private void DrawObservationAreaSelection()
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField(
+                "Telas ou atividades dentro da cena (opcional)",
+                EditorStyles.boldLabel
+            );
+            EditorGUILayout.HelpBox(
+                "Use esta opção somente quando uma mesma cena possuir diferentes Canvas, painéis ou atividades ativados em momentos distintos. A imagem continua sendo da Game View completa, mas fica identificada pelo momento e pela área observada. Se a cena representar uma única atividade, basta selecionar a cena acima.",
+                MessageType.Info
+            );
+
+            DrawObservationAreaDropArea();
+            DrawLoadedObservationAreas();
+        }
+
+        private static void DrawObservationAreaDropArea()
+        {
+            Rect dropArea = GUILayoutUtility.GetRect(
+                0f,
+                52f,
+                GUILayout.ExpandWidth(true)
+            );
+            GUI.Box(
+                dropArea,
+                "Arraste aqui um Canvas, painel ou atividade da Hierarchy",
+                EditorStyles.helpBox
+            );
+
+            Event currentEvent = Event.current;
+            if (
+                !dropArea.Contains(currentEvent.mousePosition) ||
+                (currentEvent.type != EventType.DragUpdated &&
+                    currentEvent.type != EventType.DragPerform)
+            )
+            {
+                return;
+            }
+
+            bool hasSceneObject = false;
+            foreach (UnityEngine.Object draggedObject in DragAndDrop.objectReferences)
+            {
+                GameObject gameObject = GetSceneGameObject(draggedObject);
+                if (IsEditableSceneObject(gameObject))
+                {
+                    hasSceneObject = true;
+                    break;
                 }
             }
 
-            if (!hasEnabledScene)
+            if (!hasSceneObject)
+            {
+                DragAndDrop.visualMode = DragAndDropVisualMode.Rejected;
+                return;
+            }
+
+            DragAndDrop.visualMode = DragAndDropVisualMode.Link;
+            if (currentEvent.type != EventType.DragPerform)
+            {
+                currentEvent.Use();
+                return;
+            }
+
+            DragAndDrop.AcceptDrag();
+            foreach (UnityEngine.Object draggedObject in DragAndDrop.objectReferences)
+            {
+                GameObject gameObject = GetSceneGameObject(draggedObject);
+                if (IsEditableSceneObject(gameObject))
+                {
+                    LudusSetupAssistant.ConfigureObservationArea(gameObject);
+                }
+            }
+
+            currentEvent.Use();
+        }
+
+        private static void DrawLoadedObservationAreas()
+        {
+            LudusCaptureContextTrigger[] triggers =
+                UnityEngine.Object.FindObjectsByType<LudusCaptureContextTrigger>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None
+                );
+            Array.Sort(
+                triggers,
+                (left, right) => string.CompareOrdinal(
+                    left.gameObject.scene.name + "/" + left.gameObject.name,
+                    right.gameObject.scene.name + "/" + right.gameObject.name
+                )
+            );
+
+            bool hasMarkedArea = false;
+            foreach (LudusCaptureContextTrigger trigger in triggers)
+            {
+                if (trigger == null || !trigger.captureVisualReference)
+                {
+                    continue;
+                }
+
+                hasMarkedArea = true;
+                EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+                EditorGUILayout.LabelField(
+                    trigger.gameObject.scene.name + " / " + trigger.gameObject.name
+                );
+
+                if (GUILayout.Button("Selecionar", GUILayout.Width(72f)))
+                {
+                    Selection.activeGameObject = trigger.gameObject;
+                    EditorGUIUtility.PingObject(trigger.gameObject);
+                }
+
+                if (GUILayout.Button("Desmarcar", GUILayout.Width(76f)))
+                {
+                    Undo.RecordObject(
+                        trigger,
+                        "Desmarcar área de observação LUDUS"
+                    );
+                    trigger.captureVisualReference = false;
+                    EditorUtility.SetDirty(trigger);
+                    EditorSceneManager.MarkSceneDirty(trigger.gameObject.scene);
+                }
+
+                EditorGUILayout.EndHorizontal();
+            }
+
+            if (!hasMarkedArea)
             {
                 EditorGUILayout.HelpBox(
-                    "Adicione cenas ao Build Profile para selecioná-las aqui.",
-                    MessageType.Warning
+                    "Nenhuma Área de observação LUDUS marcada nas cenas abertas.",
+                    MessageType.None
                 );
             }
+        }
+
+        private bool IsSceneTracked(string sceneName)
+        {
+            SerializedProperty trackedMode =
+                serializedObject.FindProperty("sceneCaptureMode");
+            return trackedMode.enumValueIndex ==
+                    (int)LudusSceneCaptureMode.AllScenes ||
+                ContainsSceneName(
+                    serializedObject.FindProperty("selectedSceneNames"),
+                    sceneName
+                );
+        }
+
+        private void RemoveUntrackedScreenshotScenes()
+        {
+            SerializedProperty screenshotScenes =
+                serializedObject.FindProperty("selectedScreenshotSceneNames");
+
+            for (int index = screenshotScenes.arraySize - 1; index >= 0; index--)
+            {
+                string sceneName = screenshotScenes
+                    .GetArrayElementAtIndex(index)
+                    .stringValue;
+                if (!IsSceneTracked(sceneName))
+                {
+                    screenshotScenes.DeleteArrayElementAtIndex(index);
+                }
+            }
+        }
+
+        private static SceneAsset FindSceneAsset(string sceneName)
+        {
+            foreach (string guid in AssetDatabase.FindAssets(sceneName + " t:Scene"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (
+                    string.Equals(
+                        System.IO.Path.GetFileNameWithoutExtension(path),
+                        sceneName,
+                        StringComparison.Ordinal
+                    )
+                )
+                {
+                    return AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsSceneInEnabledBuildProfile(string sceneName)
+        {
+            foreach (EditorBuildSettingsScene buildScene in EditorBuildSettings.scenes)
+            {
+                if (
+                    buildScene.enabled &&
+                    string.Equals(
+                        System.IO.Path.GetFileNameWithoutExtension(buildScene.path),
+                        sceneName,
+                        StringComparison.Ordinal
+                    )
+                )
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static GameObject GetSceneGameObject(
+            UnityEngine.Object draggedObject
+        )
+        {
+            if (draggedObject is GameObject gameObject)
+            {
+                return gameObject;
+            }
+
+            return draggedObject is Component component
+                ? component.gameObject
+                : null;
+        }
+
+        private static bool IsEditableSceneObject(GameObject gameObject)
+        {
+            return gameObject != null &&
+                gameObject.scene.IsValid() &&
+                !EditorUtility.IsPersistent(gameObject);
         }
 
         private static bool ContainsSceneName(
@@ -562,8 +1055,12 @@ namespace LudusSDK.Editor
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
+            EditorGUILayout.LabelField(
+                "Área de observação LUDUS",
+                EditorStyles.boldLabel
+            );
             EditorGUILayout.HelpBox(
-                "Adicione este componente ao Canvas, painel ou objeto que representa o recorte que você quer acompanhar. O SDK encontra automaticamente a base LUDUS SDK.",
+                "Esta área representa um Canvas, painel ou atividade que você quer acompanhar. O SDK encontra automaticamente a base LUDUS SDK.",
                 MessageType.Info
             );
             Draw("beginWhenEnabled", "Iniciar ao ativar este objeto");
@@ -575,6 +1072,16 @@ namespace LudusSDK.Editor
             );
             Draw("contextKind", "Tipo deste recorte");
             Draw("observationPurpose", "Objetivo deste recorte (opcional)");
+
+            EditorGUILayout.Space();
+            Draw(
+                "captureVisualReference",
+                "Usar este recorte como fundo do mapa"
+            );
+            EditorGUILayout.HelpBox(
+                "Marque somente Canvas, painéis ou atividades cuja imagem ajude a interpretar o mapa. Menus, HUDs e telas auxiliares normalmente devem permanecer desmarcados.",
+                MessageType.Info
+            );
 
             EditorGUILayout.Space();
             showControllerOverride = EditorGUILayout.Foldout(

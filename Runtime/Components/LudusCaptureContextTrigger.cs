@@ -10,6 +10,7 @@ namespace LudusSDK
         Other,
     }
 
+    [AddComponentMenu("LUDUS/Área de observação LUDUS")]
     [DisallowMultipleComponent]
     public sealed class LudusCaptureContextTrigger : MonoBehaviour
     {
@@ -43,6 +44,11 @@ namespace LudusSDK
         [TextArea(2, 4)]
         [Tooltip("Objetivo observacional ou pedagógico opcional deste recorte.")]
         public string observationPurpose;
+
+        [Header("Imagem para o mapa de interações")]
+        [InspectorName("Usar este recorte como fundo do mapa")]
+        [Tooltip("Quando as capturas visuais estiverem habilitadas, permite registrar uma imagem deste Canvas, painel ou atividade. Deixe desmarcado em menus, HUDs e telas sem interesse para o acompanhamento.")]
+        public bool captureVisualReference;
 
         private LudusCaptureContext ownedContext;
         private bool automaticStartAttempted;
@@ -104,7 +110,9 @@ namespace LudusSDK
             ownedContext = new LudusCaptureContext(
                 GetDisplayName(),
                 contextKind.ToString(),
-                observationPurpose
+                observationPurpose,
+                captureVisualReference,
+                GetVisualReferenceKey()
             );
 
             bool started = sessionController.TryBeginCaptureContext(
@@ -163,6 +171,23 @@ namespace LudusSDK
             return string.IsNullOrWhiteSpace(titleForDashboard)
                 ? gameObject.name
                 : titleForDashboard;
+        }
+
+        private string GetVisualReferenceKey()
+        {
+            string sceneName = string.IsNullOrWhiteSpace(gameObject.scene.name)
+                ? "cena"
+                : gameObject.scene.name;
+            string hierarchyPath = gameObject.name;
+            Transform current = transform.parent;
+
+            while (current != null)
+            {
+                hierarchyPath = current.name + "/" + hierarchyPath;
+                current = current.parent;
+            }
+
+            return "object:" + sceneName + ":" + hierarchyPath;
         }
     }
 }

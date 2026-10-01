@@ -58,7 +58,7 @@ Na Unity:
 4. Informe:
 
    ```text
-   https://github.com/RodrigoBichet/LUDUS-Unity-SDK.git#v0.1.2
+   https://github.com/RodrigoBichet/LUDUS-Unity-SDK.git#v0.1.3
    ```
 
 5. Aguarde a importação terminar sem erros.
@@ -86,7 +86,7 @@ Antes de mexer no jogo real:
 7. Entre no Play Mode.
 8. Inicie a sessão fictícia pelos controles exibidos na aba **Game**.
 9. Clique no botão, conclua o campo de texto e arraste a peça.
-10. Antes de sair do Play Mode, clique em **Encerrar sessão e exibir JSON**.
+10. Antes de sair do Play Mode, clique em **Encerrar sessão e gerar JSON**.
 11. Confirme no Console que foi produzido um JSON LUDUS.
 
 Mais adiante, **LUDUS > Adicionar coleta ao meu jogo** criará um asset separado
@@ -141,6 +141,7 @@ Selecione o objeto **LUDUS SDK** e configure o Inspector:
 | **Baixar arquivo JSON ao encerrar (WebGL)** | marcado |
 | **Rótulo do arquivo (opcional)** | vazio ou um rótulo curto, sem dados pessoais |
 | **Capturar automaticamente em** | todas as cenas ou somente as selecionadas |
+| **Capturar imagem da tela** | desmarcado no primeiro teste; habilite somente com finalidade e autorização |
 
 Em **Conexão com ambiente LUDUS (avançado)**, deixe a URL vazia no fluxo de
 importação manual. Se optar pelo envio direto em um ambiente autorizado, a URL
@@ -155,6 +156,18 @@ trajetória do ponteiro e arrastes. O Inspector desta versão apresenta somente
 recursos cuja coleta está disponível. Outros campos permanecem no contrato JSON
 por compatibilidade, desativados e sem exigir configuração da pessoa
 desenvolvedora.
+
+Em **Capturas visuais**, a imagem da Game View é opcional e permanece
+desativada por padrão. Quando habilitada, escolha todas as cenas acompanhadas
+ou arraste somente as cenas cuja imagem realmente ajuda a interpretar o mapa.
+O SDK usa JPEG, maior dimensão de 1280 px, qualidade 70 e conserva até quatro
+imagens automáticas por sessão. Se houver mais recortes, prioriza os que tiveram
+mais interações e usa o tempo como desempate. Essas definições ficam internas
+para evitar que uma configuração acidental produza arquivos muito pesados.
+
+Não habilite imagens em telas com nomes completos, credenciais, conversas ou
+outros dados sensíveis. A captura visual oferece contexto à observação; ela não
+é necessária para cliques, trajetórias ou eventos semânticos funcionarem.
 
 Se a base já existia e o sistema de entrada do projeto mudou, selecione-a e use
 **GameObject > LUDUS > Atualizar coletor de mouse da base selecionada**.
@@ -188,6 +201,12 @@ genérico, escolha a função que ele realmente cumpre no jogo: **Objeto clicáv
 ou **Objeto arrastável**. O nome do GameObject é usado inicialmente no Dashboard
 e pode ser substituído por um rótulo mais claro.
 
+Em objetos arrastáveis, selecione a peça que recebe o gesto e realmente se
+move, não apenas o painel ou a área de destino. Se o manipulador de arraste
+estiver em um filho do objeto escolhido, a janela permite trocar para esse
+filho. Assim o JSON registra o nome da peça, as coordenadas inicial e final, a
+duração e a distância do gesto.
+
 ### Requisitos para a interação chegar ao SDK
 
 Para elementos dentro de um Canvas:
@@ -205,6 +224,12 @@ não tornam o objeto clicável ou arrastável por conta própria.
 Se a atividade ocupar apenas parte da tela, use um `LudusCaptureContextTrigger`
 para delimitar o contexto. Contextos são opcionais e não representam, por si
 só, acerto, erro ou objetivo pedagógico.
+
+Quando uma mesma cena possui telas ou atividades internas ativadas em momentos
+distintos, elas podem ser marcadas em **Telas ou atividades dentro da cena** no
+asset LUDUS. A imagem continua sendo da Game View completa, mas fica vinculada
+ao recorte ativo. Para uma cena que representa uma única atividade, selecione
+somente a cena e não crie recortes extras.
 
 ## 6. Ligar o ciclo de vida da sessão ao jogo
 
@@ -268,10 +293,11 @@ o desenvolvedor do jogo não precisa inserir `studentId` no projeto Unity.
 2. Teste pelo menos um botão, um movimento e um arraste configurado.
 3. Se houver campo de texto, digite apenas conteúdo fictício e confirme que o
    texto não aparece no JSON.
-4. Encerre a sessão uma única vez.
-5. Confirme `schemaVersion`, `captureMode: "sdk"`, `source`, `capabilities`,
+4. Se habilitou captura visual, aguarde a imagem terminar antes de encerrar.
+5. Encerre a sessão uma única vez.
+6. Confirme `schemaVersion`, `captureMode: "sdk"`, `source`, `sourceVersion`, `capabilities`,
    duração, viewport e coleções esperadas.
-6. Verifique que nada do jogo mudou por causa do coletor.
+7. Verifique que nada do jogo mudou por causa do coletor.
 
 Na Console, erros do SDK começam com `[LUDUS]`. Um JSON válido deve possuir pelo
 menos início e fim coerentes, `gameId`, plataforma, duração e as coleções
@@ -334,6 +360,7 @@ eventos semânticos que tenham sido informados explicitamente pelo jogo.
 - [ ] O jogo inicia e encerra a sessão em momentos conscientes.
 - [ ] Somente interações escolhidas aparecem no JSON.
 - [ ] Nenhum conteúdo digitado foi armazenado.
+- [ ] Capturas visuais, quando habilitadas, mostram apenas conteúdo autorizado.
 - [ ] O WebGL baixou o JSON.
 - [ ] O Dashboard validou e importou o arquivo.
 - [ ] O mapa e as capacidades correspondem ao que realmente foi capturado.
@@ -355,6 +382,12 @@ eventos semânticos que tenham sido informados explicitamente pelo jogo.
   duplicadas e confirme que o método de início não está ligado mais de uma vez.
 - **O objeto arrastável não se move:** isso é responsabilidade do jogo; o SDK
   apenas observa o gesto.
+- **A trajetória de arraste existe, mas a peça não é identificada:** o coletor
+  global registrou o gesto, porém o marcador semântico está no objeto errado.
+  Selecione a peça que realmente recebe o arraste, não a área de destino.
+- **A imagem não apareceu:** confirme que a capacidade está habilitada, que a
+  cena foi marcada para imagem e que a sessão não foi encerrada enquanto a
+  captura ainda estava pendente.
 - **O download não ocorreu no WebGL:** confirme a opção de download no asset,
   encerre a sessão a partir de uma ação permitida pelo navegador e teste sem
   bloqueadores.
@@ -371,5 +404,7 @@ eventos semânticos que tenham sido informados explicitamente pelo jogo.
   conclusiva.
 - Acertos, erros, fases, categorias e objetivos pedagógicos estão fora do
   escopo desta versão de avaliação e permanecem desativados no contrato.
+- Capturas visuais são opcionais, limitadas e devem ser usadas somente com
+  finalidade definida e autorização adequada.
 - Testar no Editor é necessário, mas o aceite final de uma integração WebGL
   exige um Build And Run e a validação do JSON no Dashboard.

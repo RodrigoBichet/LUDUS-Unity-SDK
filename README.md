@@ -23,6 +23,7 @@ está conhecendo o SDK pela primeira vez.
 - registra cliques e trajetória do mouse quando habilitados;
 - acompanha cenas automaticamente;
 - permite recortes extras por Canvas, painel ou atividade;
+- captura imagens JPEG opcionais para contextualizar o mapa de interações;
 - gera um JSON por sessão;
 - envia para `POST /api/sessions` quando há ambiente configurado;
 - preserva fallback local quando está offline ou o envio falha.
@@ -56,7 +57,7 @@ No projeto Unity que receberá o SDK:
 4. Informe:
 
    ```text
-   https://github.com/RodrigoBichet/LUDUS-Unity-SDK.git#v0.1.2
+   https://github.com/RodrigoBichet/LUDUS-Unity-SDK.git#v0.1.3
    ```
 
 5. Aguarde a Unity importar o pacote.
@@ -81,7 +82,7 @@ Assets/LUDUS/Tutorial/
 ```
 
 A cena contém uma base LUDUS e um painel visível somente no tutorial, com os
-botões **Iniciar sessão fictícia** e **Encerrar sessão e exibir JSON**. Ela usa
+botões **Iniciar sessão fictícia** e **Encerrar sessão e gerar JSON**. Ela usa
 uma identidade fictícia, salva a sessão localmente e, no WebGL, baixa um JSON
 de demonstração; não altera as cenas do jogo.
 
@@ -103,7 +104,7 @@ Para validar no Editor:
 5. Pressione **Play**.
 6. Clique em **Iniciar sessão fictícia**.
 7. Realize as interações apresentadas na Game View.
-8. Ainda no Play Mode, clique em **Encerrar sessão e exibir JSON**.
+8. Ainda no Play Mode, clique em **Encerrar sessão e gerar JSON**.
 9. Confira o JSON no Console e a cópia local em `ludus_offline`.
 
 Ao integrar o SDK ao jogo real, o comando **LUDUS > Adicionar coleta ao meu
@@ -124,6 +125,11 @@ Ao adicionar uma interação, o SDK preenche inicialmente **Nome exibido no
 dashboard** com o nome do GameObject. Esse texto pode ser alterado para ficar
 mais legível sem renomear o objeto na Hierarchy e sem modificar o funcionamento
 do jogo.
+
+Para objetos arrastáveis, marque o GameObject que realmente recebe o gesto e se
+move. Não marque apenas a área de destino ou o painel que contém a peça. Se o
+SDK detectar que o componente de arraste está em um filho, a janela oferece a
+opção de acompanhar esse filho automaticamente.
 
 A peça do exercício se movimenta porque recebe um componente exclusivamente
 didático. O movimento visual continua sendo responsabilidade do jogo real; o
@@ -180,6 +186,19 @@ No painel **Project**, selecione o asset criado em `Assets/LUDUS/` e preencha:
 No modo de cenas selecionadas, marque as cenas de atividade. Nas demais, a
 sessão continua ativa, mas mouse e cliques ficam pausados. Ao voltar para uma
 cena marcada, a coleta retoma automaticamente.
+
+As **Capturas visuais** são opcionais e permanecem desativadas por padrão. Ao
+habilitá-las, escolha se todas as cenas acompanhadas ou somente cenas marcadas
+podem fornecer uma imagem para o mapa. O SDK captura a Game View completa no
+início do recorte, reduz a maior dimensão para 1280 px, compacta em JPEG com
+qualidade 70 e conserva no máximo quatro imagens automáticas por sessão. Quando
+existem mais recortes, prioriza os que receberam mais interações e usa o tempo
+como desempate. Esses limites ficam internos para evitar configurações pesadas
+ou acidentais.
+
+Habilite imagens somente quando elas forem necessárias para interpretar as
+interações e houver autorização adequada. Não use a captura em telas com dados
+pessoais, credenciais, conversas ou outras informações sensíveis.
 
 O nome técnico `gameId` é gerado internamente a partir do nome do jogo. Não é
 necessário preenchê-lo.
@@ -243,6 +262,11 @@ No Inspector, preencha em linguagem do seu jogo:
 
 O SDK encontra a base automaticamente. Só use a referência manual se o jogo
 tiver mais de uma base LUDUS, situação que normalmente deve ser evitada.
+
+Quando as capturas visuais estiverem habilitadas, o recorte pode ser marcado
+como fundo do mapa. A imagem continua sendo a Game View completa; a marcação
+serve para associá-la ao momento, Canvas, painel ou atividade correspondente.
+Em cenas com uma única atividade, selecionar a cena já é suficiente.
 
 ## Envio, fallback e privacidade
 
@@ -359,6 +383,7 @@ ao repositório.
 - [ ] Tutorial isolado validado no WebGL.
 - [ ] Nome do jogo preenchido.
 - [ ] Cenas acompanhadas configuradas.
+- [ ] Capturas visuais mantidas desativadas ou habilitadas somente em cenas autorizadas.
 - [ ] Início e encerramento ligados ao fluxo do jogo.
 - [ ] Apenas identidade fictícia usada nos testes.
 - [ ] JSON conferido.

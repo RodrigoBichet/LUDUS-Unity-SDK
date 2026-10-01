@@ -39,10 +39,10 @@ namespace LudusSDK
 
             if (ended)
             {
-                Debug.Log(
-                    "[LUDUS] A sessão ativa do tutorial foi encerrada "
-                        + "automaticamente ao sair do Play Mode. JSON: "
-                        + json
+                LogSessionSummary(
+                    json,
+                    "A sessão ativa do tutorial foi encerrada "
+                        + "automaticamente ao sair do Play Mode."
                 );
                 return;
             }
@@ -131,7 +131,7 @@ namespace LudusSDK
             };
 
             string buttonLabel = hasActiveSession
-                ? "Encerrar sessão e exibir JSON"
+                ? "Encerrar sessão e gerar JSON"
                 : "Iniciar sessão fictícia";
 
             GUILayout.BeginArea(contentRect);
@@ -176,12 +176,15 @@ namespace LudusSDK
                     out string endError
                 );
                 statusMessage = ended
-                    ? "Sessão encerrada. JSON no Console."
+                    ? "Sessão encerrada. JSON gerado e entregue conforme a configuração do SDK."
                     : endError;
 
                 if (ended)
                 {
-                    Debug.Log("[LUDUS] JSON do tutorial: " + json);
+                    LogSessionSummary(
+                        json,
+                        "Sessão do tutorial encerrada com sucesso."
+                    );
                 }
 
                 return;
@@ -194,6 +197,23 @@ namespace LudusSDK
             statusMessage = started
                 ? "Sessão iniciada. Realize as interações dentro da Game View."
                 : startError;
+        }
+
+        private static void LogSessionSummary(
+            string json,
+            string message
+        )
+        {
+            int jsonLength = string.IsNullOrEmpty(json) ? 0 : json.Length;
+
+            Debug.Log(
+                "[LUDUS] "
+                    + message
+                    + " JSON gerado com "
+                    + jsonLength
+                    + " caracteres; o conteúdo completo não é exibido "
+                    + "no Console para evitar expor ou duplicar imagens Base64."
+            );
         }
     }
 }

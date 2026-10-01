@@ -4,6 +4,36 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 
 ## [Não publicado]
 
+## [0.1.3] - 2026-10-01
+
+### Adicionado
+
+- Captura visual opcional da Game View em JPEG para contextualizar mapas de
+  interação, desativada por padrão.
+- Seleção por arrastar e soltar das cenas que podem fornecer imagem e das
+  telas ou atividades internas que formam recortes próprios.
+- Retenção de uma imagem por cena ou recorte, com máximo padrão de quatro por
+  sessão e prioridade por quantidade de interações e duração.
+- Validação de formato, dimensões, Base64 e limites individuais e totais das
+  imagens antes da serialização.
+- API manual `LudusSdk.TryCaptureScreenshot` para integrações que precisam
+  solicitar uma imagem em momento explícito.
+- Testes EditMode para configuração, serialização, limites, seleção e
+  priorização das capturas visuais.
+
+### Alterado
+
+- Cenas acompanhadas e cenas com imagem passam a ser escolhidas por objetos de
+  cena arrastados do Project, evitando listas extensas no Inspector.
+- Áreas internas opcionais podem ser marcadas arrastando Canvas, painel ou
+  atividade da Hierarchy, sem exigir que toda cena seja dividida em recortes.
+- A janela de interações avisa quando a área selecionada apenas contém a peça
+  que realmente recebe o gesto de arraste e permite acompanhar o filho certo.
+- Logs do tutorial deixam de imprimir o JSON completo quando ele contém
+  imagens Base64.
+- Documentação passa a explicar limites, privacidade, escolha de cenas,
+  seleção correta da peça arrastável e validação WebGL com capturas.
+
 ## [0.1.2] - 2026-09-29
 
 ### Adicionado

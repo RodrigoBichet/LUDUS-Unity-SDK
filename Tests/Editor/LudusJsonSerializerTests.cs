@@ -47,6 +47,7 @@ namespace LudusSDK.Tests
             Assert.That(serialized, Is.True, errorMessage);
             Assert.That(json, Does.Contain("\"schemaVersion\":\"1.0.0\""));
             Assert.That(json, Does.Contain("\"captureMode\":\"sdk\""));
+            Assert.That(json, Does.Contain("\"sourceVersion\":\"0.1.3\""));
             Assert.That(
                 json,
                 Does.Contain(
@@ -837,8 +838,382 @@ public void SessionLifecycle_ComContextoAtivo_RegistraTrajetoriaDeArraste()
             Assert.That(config.capabilities.phaseEvents, Is.False);
             Assert.That(config.capabilities.correctWrong, Is.False);
             Assert.That(config.capabilities.categoryEvents, Is.False);
+            Assert.That(config.captureScreenshotOnContextStart, Is.True);
+            Assert.That(
+                config.sceneScreenshotMode,
+                Is.EqualTo(LudusSceneScreenshotMode.AllTrackedScenes)
+            );
+            Assert.That(config.maxScreenshotsPerSession, Is.EqualTo(4));
+            Assert.That(config.screenshotJpegQuality, Is.EqualTo(70));
+            Assert.That(config.screenshotMaxDimensionPx, Is.EqualTo(1280));
 
             Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void Config_ComCenasVisuaisSelecionadas_ExcluiMenuAcompanhado()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.sceneCaptureMode = LudusSceneCaptureMode.AllScenes;
+            config.sceneScreenshotMode =
+                LudusSceneScreenshotMode.SelectedScenes;
+            config.selectedScreenshotSceneNames.Add("Atividade 1");
+
+            Assert.That(config.ShouldCaptureScene("Menu"), Is.True);
+            Assert.That(
+                config.ShouldCaptureScreenshotForScene("Menu"),
+                Is.False
+            );
+            Assert.That(
+                config.ShouldCaptureScreenshotForScene("Atividade 1"),
+                Is.True
+            );
+
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void SessionLifecycle_ComScreenshotHabilitada_SerializaImagemEContexto()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameId = "jogo-teste";
+            config.capabilities.screenshots = true;
+
+            LudusSessionLifecycle lifecycle = new LudusSessionLifecycle();
+
+            bool started = lifecycle.TryStartSession(
+                config,
+                new LudusParticipant(
+                    "000000000000000000000017",
+                    "Estudante Fictício"
+                ),
+                new LudusViewport(1280, 720, "pixel", "bottom-left"),
+                out string startError
+            );
+            bool contextStarted = lifecycle.TryBeginCaptureContext(
+                new LudusCaptureContext(
+                    "Atividade com imagem",
+                    "activity"
+                ),
+                out string contextError
+            );
+            string contextInstanceId =
+                lifecycle.ActiveCaptureContextInstanceId;
+            bool screenshotRecorded = lifecycle.TryRecordScreenshot(
+                contextInstanceId,
+                640,
+                360,
+                "/9j/2Q==",
+                out string screenshotError
+            );
+            bool ended = lifecycle.TryEndAndSerialize(
+                out string json,
+                out string endError
+            );
+
+            Object.DestroyImmediate(config);
+
+            Assert.That(started, Is.True, startError);
+            Assert.That(contextStarted, Is.True, contextError);
+            Assert.That(screenshotRecorded, Is.True, screenshotError);
+            Assert.That(ended, Is.True, endError);
+            Assert.That(
+                json,
+                Does.Contain(
+                    "\"contextInstanceId\":\"" +
+                    contextInstanceId +
+                    "\""
+                )
+            );
+            Assert.That(json, Does.Contain("\"mimeType\":\"image/jpeg\""));
+            Assert.That(json, Does.Contain("\"widthPx\":640"));
+            Assert.That(json, Does.Contain("\"heightPx\":360"));
+            Assert.That(
+                json,
+                Does.Contain("\"screenshotBase64\":\"/9j/2Q==\"")
+            );
+            Assert.That(json, Does.Not.Contain("\"caminho\":"));
+        }
+
+        [Test]
+        public void SessionLifecycle_ComScreenshotDesabilitada_RejeitaImagem()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameId = "jogo-teste";
+
+            LudusSessionLifecycle lifecycle = new LudusSessionLifecycle();
+            bool started = lifecycle.TryStartSession(
+                config,
+                new LudusParticipant(
+                    "000000000000000000000018",
+                    "Estudante Fictício"
+                ),
+                new LudusViewport(1280, 720, "pixel", "bottom-left"),
+                out string startError
+            );
+            bool contextStarted = lifecycle.TryBeginCaptureContext(
+                new LudusCaptureContext("Atividade sem imagem", "activity"),
+                out string contextError
+            );
+            bool screenshotRecorded = lifecycle.TryRecordScreenshot(
+                lifecycle.ActiveCaptureContextInstanceId,
+                640,
+                360,
+                "/9j/2Q==",
+                out string screenshotError
+            );
+
+            Object.DestroyImmediate(config);
+
+            Assert.That(started, Is.True, startError);
+            Assert.That(contextStarted, Is.True, contextError);
+            Assert.That(screenshotRecorded, Is.False);
+            Assert.That(screenshotError, Does.Contain("desativada"));
+        }
+
+        [Test]
+        public void SessionLifecycle_ComMaisCandidatas_RetemRecortesMaisInteragidos()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameId = "jogo-teste";
+            config.capabilities.screenshots = true;
+            config.maxScreenshotsPerSession = 2;
+
+            LudusSessionLifecycle lifecycle = new LudusSessionLifecycle();
+            Assert.That(
+                lifecycle.TryStartSession(
+                    config,
+                    new LudusParticipant(
+                        "000000000000000000000019",
+                        "Estudante Fictício"
+                    ),
+                    new LudusViewport(1280, 720, "pixel", "bottom-left"),
+                    out string startError
+                ),
+                Is.True,
+                startError
+            );
+
+            string[] contextNames =
+                { "Recorte A", "Recorte B", "Recorte C", "Recorte D" };
+            string[] visualKeys =
+                { "scene:a", "scene:b", "scene:c", "scene:d" };
+            string[] images =
+                { "/9j/Af/Z", "/9j/Av/Z", "/9j/A//Z", "/9j/BP/Z" };
+            int[] clickCounts = { 1, 3, 2, 0 };
+
+            for (int index = 0; index < contextNames.Length; index++)
+            {
+                Assert.That(
+                    lifecycle.TryBeginCaptureContext(
+                        new LudusCaptureContext(
+                            contextNames[index],
+                            "scene",
+                            "",
+                            true,
+                            visualKeys[index]
+                        ),
+                        out string contextError
+                    ),
+                    Is.True,
+                    contextError
+                );
+                string contextInstanceId =
+                    lifecycle.ActiveCaptureContextInstanceId;
+                Assert.That(
+                    lifecycle.TryRecordAutomaticScreenshotCandidate(
+                        contextInstanceId,
+                        640,
+                        360,
+                        images[index],
+                        out string screenshotError
+                    ),
+                    Is.True,
+                    screenshotError
+                );
+
+                for (int clickIndex = 0;
+                    clickIndex < clickCounts[index];
+                    clickIndex++)
+                {
+                    Assert.That(
+                        lifecycle.TryRecordClick(
+                            10 + clickIndex,
+                            20 + clickIndex,
+                            out string clickError
+                        ),
+                        Is.True,
+                        clickError
+                    );
+                }
+
+                Assert.That(
+                    lifecycle.TryEndCaptureContext(out string contextEndError),
+                    Is.True,
+                    contextEndError
+                );
+            }
+
+            Assert.That(
+                lifecycle.TryEndAndSerialize(
+                    out string json,
+                    out string endError
+                ),
+                Is.True,
+                endError
+            );
+
+            Object.DestroyImmediate(config);
+
+            Assert.That(
+                lifecycle.LastCompletedSession.screenshots.Count,
+                Is.EqualTo(2)
+            );
+            Assert.That(json, Does.Contain("/9j/Av/Z"));
+            Assert.That(json, Does.Contain("/9j/A//Z"));
+            Assert.That(json, Does.Not.Contain("/9j/Af/Z"));
+            Assert.That(json, Does.Not.Contain("/9j/BP/Z"));
+        }
+
+        [Test]
+        public void SessionLifecycle_ComMesmoRecorteReaberto_NaoDuplicaImagem()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameId = "jogo-teste";
+            config.capabilities.screenshots = true;
+
+            LudusSessionLifecycle lifecycle = new LudusSessionLifecycle();
+            Assert.That(
+                lifecycle.TryStartSession(
+                    config,
+                    new LudusParticipant(
+                        "000000000000000000000020",
+                        "Estudante Fictício"
+                    ),
+                    new LudusViewport(1280, 720, "pixel", "bottom-left"),
+                    out string startError
+                ),
+                Is.True,
+                startError
+            );
+
+            for (int activation = 0; activation < 2; activation++)
+            {
+                Assert.That(
+                    lifecycle.TryBeginCaptureContext(
+                        new LudusCaptureContext(
+                            "Mesmo painel",
+                            "canvas",
+                            "",
+                            true,
+                            "object:cena:canvas/painel"
+                        ),
+                        out string contextError
+                    ),
+                    Is.True,
+                    contextError
+                );
+                Assert.That(
+                    lifecycle.TryRecordAutomaticScreenshotCandidate(
+                        lifecycle.ActiveCaptureContextInstanceId,
+                        640,
+                        360,
+                        activation == 0 ? "/9j/Af/Z" : "/9j/Av/Z",
+                        out string screenshotError
+                    ),
+                    Is.True,
+                    screenshotError
+                );
+                Assert.That(
+                    lifecycle.TryRecordClick(
+                        30,
+                        40,
+                        out string clickError
+                    ),
+                    Is.True,
+                    clickError
+                );
+                Assert.That(
+                    lifecycle.TryEndCaptureContext(out string contextEndError),
+                    Is.True,
+                    contextEndError
+                );
+            }
+
+            Assert.That(
+                lifecycle.TryEndAndSerialize(
+                    out string json,
+                    out string endError
+                ),
+                Is.True,
+                endError
+            );
+
+            Object.DestroyImmediate(config);
+
+            Assert.That(
+                lifecycle.LastCompletedSession.screenshots.Count,
+                Is.EqualTo(1)
+            );
+            Assert.That(json, Does.Contain("/9j/Af/Z"));
+            Assert.That(json, Does.Not.Contain("/9j/Av/Z"));
+        }
+
+        [Test]
+        public void SessionLifecycle_ComRecorteNaoMarcado_RejeitaCandidataAutomatica()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameId = "jogo-teste";
+            config.capabilities.screenshots = true;
+
+            LudusSessionLifecycle lifecycle = new LudusSessionLifecycle();
+            Assert.That(
+                lifecycle.TryStartSession(
+                    config,
+                    new LudusParticipant(
+                        "000000000000000000000021",
+                        "Estudante Fictício"
+                    ),
+                    new LudusViewport(1280, 720, "pixel", "bottom-left"),
+                    out string startError
+                ),
+                Is.True,
+                startError
+            );
+            Assert.That(
+                lifecycle.TryBeginCaptureContext(
+                    new LudusCaptureContext(
+                        "Menu",
+                        "canvas",
+                        "",
+                        false,
+                        "object:cena:canvas/menu"
+                    ),
+                    out string contextError
+                ),
+                Is.True,
+                contextError
+            );
+
+            bool recorded =
+                lifecycle.TryRecordAutomaticScreenshotCandidate(
+                    lifecycle.ActiveCaptureContextInstanceId,
+                    640,
+                    360,
+                    "imagem-menu",
+                    out string screenshotError
+                );
+
+            Object.DestroyImmediate(config);
+
+            Assert.That(recorded, Is.False);
+            Assert.That(screenshotError, Does.Contain("não foi marcado"));
         }
 
         [Test]

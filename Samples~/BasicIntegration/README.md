@@ -13,7 +13,7 @@ Esta amostra serve apenas para validar o fluxo com uma identidade fictícia. Nã
 1. Entre no Play Mode.
 2. Na aba **Game**, clique em **Iniciar sessão fictícia**.
 3. Mova o mouse e clique dentro da janela Game.
-4. Clique em **Encerrar sessão e exibir JSON**.
+4. Clique em **Encerrar sessão e gerar JSON**.
 
 Ao iniciar, a amostra abre automaticamente um recorte chamado `Atividade de teste`; não é necessário criar Canvas, painel ou objeto adicional. O Console deve exibir o JSON. Com `apiBaseUrl` vazia e fallback habilitado, o exportador tentará salvar uma cópia local. Não configure URL de produção nem use aluno real nesta amostra.
 

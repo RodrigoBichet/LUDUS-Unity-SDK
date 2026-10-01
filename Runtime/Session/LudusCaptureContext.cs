@@ -10,10 +10,17 @@ namespace LudusSDK
         public string contextKind;
         public string observationPurpose;
 
+        // Metadados internos de seleção visual. Eles não são enviados no
+        // payload dos eventos e servem apenas para limitar e priorizar imagens.
+        internal bool captureVisualReference;
+        internal string visualReferenceKey;
+
         public LudusCaptureContext(
             string displayName,
             string contextKind,
-            string observationPurpose = ""
+            string observationPurpose = "",
+            bool captureVisualReference = true,
+            string visualReferenceKey = ""
         )
         {
             this.displayName = displayName?.Trim() ?? string.Empty;
@@ -22,6 +29,12 @@ namespace LudusSDK
                 : contextKind.Trim().ToLowerInvariant();
             this.observationPurpose =
                 observationPurpose?.Trim() ?? string.Empty;
+            this.captureVisualReference = captureVisualReference;
+            this.visualReferenceKey = string.IsNullOrWhiteSpace(
+                visualReferenceKey
+            )
+                ? this.contextKind + ":" + this.displayName
+                : visualReferenceKey.Trim();
         }
 
         public bool TryValidate(out string errorMessage)
@@ -47,6 +60,19 @@ namespace LudusSDK
             {
                 errorMessage =
                     "O objetivo observacional deve ter até 500 caracteres.";
+                return false;
+            }
+
+            if (
+                captureVisualReference &&
+                (
+                    string.IsNullOrWhiteSpace(visualReferenceKey) ||
+                    visualReferenceKey.Length > 500
+                )
+            )
+            {
+                errorMessage =
+                    "A identificação interna da captura visual é inválida.";
                 return false;
             }
 

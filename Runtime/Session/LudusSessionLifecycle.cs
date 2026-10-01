@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace LudusSDK
@@ -13,6 +14,53 @@ namespace LudusSDK
         private const int MaxMousePathPoints = 50000;
         private const int MaxDragPathPoints = 50000;
         private const int MaxGameEvents = 20000;
+        private const int MaxScreenshots = 20;
+        private const int MaxScreenshotBase64Length = 2800000;
+
+        private sealed class ContextActivityState
+        {
+            public string instanceId;
+            public string visualReferenceKey;
+            public bool captureVisualReference;
+            public int startedAt;
+            public int clickCount;
+            public int dragCount;
+            public int trackedInteractionCount;
+            public int durationMs;
+            public int order;
+            public bool ended;
+            public bool aggregateRegistered;
+            public bool candidateEvaluated;
+            public LudusScreenshot screenshotCandidate;
+        }
+
+        private sealed class ContextActivityAggregate
+        {
+            public int clickCount;
+            public int dragCount;
+            public int trackedInteractionCount;
+            public int durationMs;
+            public int firstOrder;
+
+            public int InteractionCount =>
+                clickCount + dragCount + trackedInteractionCount;
+        }
+
+        private readonly Dictionary<string, ContextActivityState>
+            contextActivityByInstanceId =
+                new Dictionary<string, ContextActivityState>();
+
+        private readonly Dictionary<string, ContextActivityAggregate>
+            contextActivityByVisualKey =
+                new Dictionary<string, ContextActivityAggregate>();
+
+        private readonly Dictionary<string, LudusScreenshot>
+            retainedAutomaticScreenshots =
+                new Dictionary<string, LudusScreenshot>();
+
+        private ContextActivityState activeContextActivity;
+        private int maxAutomaticScreenshots = 4;
+        private int nextContextOrder;
 
         public bool HasActiveSession => activeSession != null;
 
@@ -21,6 +69,22 @@ namespace LudusSDK
             !string.IsNullOrWhiteSpace(activeContextInstanceId);
 
         public LudusSession LastCompletedSession { get; private set; }
+
+        public string ActiveCaptureContextInstanceId =>
+            HasActiveCaptureContext ? activeContextInstanceId : string.Empty;
+
+        public int ScreenshotCount =>
+            (activeSession?.screenshots?.Count ?? 0) +
+            retainedAutomaticScreenshots.Count;
+
+        internal bool HasRetainedAutomaticScreenshot(
+            string visualReferenceKey
+        )
+        {
+            return
+                !string.IsNullOrWhiteSpace(visualReferenceKey) &&
+                retainedAutomaticScreenshots.ContainsKey(visualReferenceKey);
+        }
 
         public bool TryStartSession(
             LudusSdkConfig config,
@@ -45,6 +109,15 @@ namespace LudusSDK
 
                 activeCaptureContext = null;
                 activeContextInstanceId = string.Empty;
+                activeContextActivity = null;
+                contextActivityByInstanceId.Clear();
+                contextActivityByVisualKey.Clear();
+                retainedAutomaticScreenshots.Clear();
+                maxAutomaticScreenshots = Math.Min(
+                    MaxScreenshots,
+                    Math.Max(1, config.maxScreenshotsPerSession)
+                );
+                nextContextOrder = 0;
                 stopwatch.Restart();
 
                 errorMessage = string.Empty;
@@ -95,12 +168,24 @@ namespace LudusSDK
 
             activeCaptureContext = context;
             activeContextInstanceId = Guid.NewGuid().ToString("N");
+            int startedAt = GetElapsedMilliseconds();
+
+            activeContextActivity = new ContextActivityState
+            {
+                instanceId = activeContextInstanceId,
+                visualReferenceKey = context.visualReferenceKey,
+                captureVisualReference = context.captureVisualReference,
+                startedAt = startedAt,
+                order = nextContextOrder++,
+            };
+            contextActivityByInstanceId[activeContextInstanceId] =
+                activeContextActivity;
 
             activeSession.gameEvents.Add(
                 new LudusGameEvent
                 {
                     eventType = "CaptureContextStarted",
-                    timestamp = GetElapsedMilliseconds(),
+                    timestamp = startedAt,
                     payloadJson = context.CreateStartedPayload(
                         activeContextInstanceId
                     ),
@@ -194,6 +279,10 @@ public bool TryRecordClick(
     );
 
     activeSession.metrics.totalClicks++;
+    if (activeContextActivity != null)
+    {
+        activeContextActivity.clickCount++;
+    }
     RegisterFirstAction(timestamp);
 
     errorMessage = string.Empty;
@@ -302,6 +391,11 @@ public bool TryRecordDragPoint(
         }
     );
 
+    if (state == "start" && activeContextActivity != null)
+    {
+        activeContextActivity.dragCount++;
+    }
+
     RegisterFirstAction(timestamp);
 
     errorMessage = string.Empty;
@@ -395,7 +489,106 @@ public bool TryRecordDragPoint(
                 }
             );
 
+            if (activeContextActivity != null)
+            {
+                activeContextActivity.trackedInteractionCount++;
+            }
+
             RegisterFirstAction(timestamp);
+            errorMessage = string.Empty;
+            return true;
+        }
+
+        public bool TryRecordScreenshot(
+            string contextInstanceId,
+            int widthPx,
+            int heightPx,
+            string screenshotBase64,
+            out string errorMessage
+        )
+        {
+            if (!TryValidateScreenshotData(
+                contextInstanceId,
+                widthPx,
+                heightPx,
+                screenshotBase64,
+                out errorMessage
+            ))
+            {
+                return false;
+            }
+
+            if (activeSession.screenshots.Count >= MaxScreenshots)
+            {
+                errorMessage =
+                    "O limite absoluto de capturas visuais da sessão foi atingido.";
+                return false;
+            }
+
+            activeSession.screenshots.Add(
+                new LudusScreenshot
+                {
+                    contextInstanceId = contextInstanceId,
+                    timestamp = GetElapsedMilliseconds(),
+                    widthPx = widthPx,
+                    heightPx = heightPx,
+                    screenshotBase64 = screenshotBase64,
+                }
+            );
+
+            errorMessage = string.Empty;
+            return true;
+        }
+
+        public bool TryRecordAutomaticScreenshotCandidate(
+            string contextInstanceId,
+            int widthPx,
+            int heightPx,
+            string screenshotBase64,
+            out string errorMessage
+        )
+        {
+            if (!TryValidateScreenshotData(
+                contextInstanceId,
+                widthPx,
+                heightPx,
+                screenshotBase64,
+                out errorMessage
+            ))
+            {
+                return false;
+            }
+
+            if (
+                !contextActivityByInstanceId.TryGetValue(
+                    contextInstanceId,
+                    out ContextActivityState activityState
+                ) ||
+                !activityState.captureVisualReference
+            )
+            {
+                errorMessage =
+                    "O contexto não foi marcado para captura visual automática.";
+                return false;
+            }
+
+            if (activityState.screenshotCandidate != null)
+            {
+                errorMessage =
+                    "Este recorte já possui uma imagem candidata nesta ativação.";
+                return false;
+            }
+
+            activityState.screenshotCandidate = new LudusScreenshot
+            {
+                contextInstanceId = contextInstanceId,
+                timestamp = GetElapsedMilliseconds(),
+                widthPx = widthPx,
+                heightPx = heightPx,
+                screenshotBase64 = screenshotBase64,
+            };
+
+            TryRetainAutomaticScreenshot(activityState);
             errorMessage = string.Empty;
             return true;
         }
@@ -419,6 +612,8 @@ public bool TryRecordDragPoint(
             {
                 EndActiveCaptureContext(durationMs);
             }
+
+            AppendRetainedAutomaticScreenshots();
 
             activeSession.End(durationMs);
             stopwatch.Stop();
@@ -498,6 +693,224 @@ private void RegisterFirstAction(int timestamp)
     }
 }
 
+        private bool TryValidateScreenshotData(
+            string contextInstanceId,
+            int widthPx,
+            int heightPx,
+            string screenshotBase64,
+            out string errorMessage
+        )
+        {
+            if (!HasActiveSession)
+            {
+                errorMessage =
+                    "Não existe sessão ativa para registrar uma captura visual.";
+                return false;
+            }
+
+            if (!activeSession.capabilities.screenshots)
+            {
+                errorMessage = "A capacidade screenshots está desativada.";
+                return false;
+            }
+
+            if (
+                string.IsNullOrWhiteSpace(contextInstanceId) ||
+                contextInstanceId.Length > 128 ||
+                widthPx < 1 ||
+                widthPx > 8192 ||
+                heightPx < 1 ||
+                heightPx > 8192 ||
+                string.IsNullOrWhiteSpace(screenshotBase64) ||
+                screenshotBase64.Length > MaxScreenshotBase64Length
+            )
+            {
+                errorMessage = "A captura visual possui dados inválidos.";
+                return false;
+            }
+
+            errorMessage = string.Empty;
+            return true;
+        }
+
+        private void RegisterContextAggregate(
+            ContextActivityState activityState
+        )
+        {
+            if (
+                activityState == null ||
+                activityState.aggregateRegistered ||
+                !activityState.captureVisualReference
+            )
+            {
+                return;
+            }
+
+            if (
+                !contextActivityByVisualKey.TryGetValue(
+                    activityState.visualReferenceKey,
+                    out ContextActivityAggregate aggregate
+                )
+            )
+            {
+                aggregate = new ContextActivityAggregate
+                {
+                    firstOrder = activityState.order,
+                };
+                contextActivityByVisualKey[activityState.visualReferenceKey] =
+                    aggregate;
+            }
+
+            aggregate.clickCount += activityState.clickCount;
+            aggregate.dragCount += activityState.dragCount;
+            aggregate.trackedInteractionCount +=
+                activityState.trackedInteractionCount;
+            aggregate.durationMs += activityState.durationMs;
+            aggregate.firstOrder = Math.Min(
+                aggregate.firstOrder,
+                activityState.order
+            );
+            activityState.aggregateRegistered = true;
+        }
+
+        private void TryRetainAutomaticScreenshot(
+            ContextActivityState activityState
+        )
+        {
+            if (
+                activityState == null ||
+                !activityState.ended ||
+                activityState.screenshotCandidate == null ||
+                activityState.candidateEvaluated
+            )
+            {
+                return;
+            }
+
+            RegisterContextAggregate(activityState);
+            activityState.candidateEvaluated = true;
+
+            if (
+                retainedAutomaticScreenshots.ContainsKey(
+                    activityState.visualReferenceKey
+                )
+            )
+            {
+                activityState.screenshotCandidate = null;
+                return;
+            }
+
+            if (
+                retainedAutomaticScreenshots.Count < maxAutomaticScreenshots
+            )
+            {
+                retainedAutomaticScreenshots[
+                    activityState.visualReferenceKey
+                ] = activityState.screenshotCandidate;
+                activityState.screenshotCandidate = null;
+                return;
+            }
+
+            string leastRelevantKey = FindLeastRelevantVisualKey();
+
+            if (
+                string.IsNullOrEmpty(leastRelevantKey) ||
+                CompareVisualRelevance(
+                    activityState.visualReferenceKey,
+                    leastRelevantKey
+                ) <= 0
+            )
+            {
+                activityState.screenshotCandidate = null;
+                return;
+            }
+
+            retainedAutomaticScreenshots.Remove(leastRelevantKey);
+            retainedAutomaticScreenshots[
+                activityState.visualReferenceKey
+            ] = activityState.screenshotCandidate;
+            activityState.screenshotCandidate = null;
+        }
+
+        private string FindLeastRelevantVisualKey()
+        {
+            string leastRelevantKey = null;
+
+            foreach (string key in retainedAutomaticScreenshots.Keys)
+            {
+                if (
+                    leastRelevantKey == null ||
+                    CompareVisualRelevance(key, leastRelevantKey) < 0
+                )
+                {
+                    leastRelevantKey = key;
+                }
+            }
+
+            return leastRelevantKey;
+        }
+
+        private int CompareVisualRelevance(string leftKey, string rightKey)
+        {
+            ContextActivityAggregate left =
+                contextActivityByVisualKey[leftKey];
+            ContextActivityAggregate right =
+                contextActivityByVisualKey[rightKey];
+            int interactionComparison = left.InteractionCount.CompareTo(
+                right.InteractionCount
+            );
+
+            if (interactionComparison != 0)
+            {
+                return interactionComparison;
+            }
+
+            int durationComparison = left.durationMs.CompareTo(
+                right.durationMs
+            );
+
+            if (durationComparison != 0)
+            {
+                return durationComparison;
+            }
+
+            // Em empate completo, o recorte visto primeiro é preservado.
+            return right.firstOrder.CompareTo(left.firstOrder);
+        }
+
+        private void AppendRetainedAutomaticScreenshots()
+        {
+            int availableSlots = Math.Min(
+                maxAutomaticScreenshots - activeSession.screenshots.Count,
+                MaxScreenshots - activeSession.screenshots.Count
+            );
+
+            if (availableSlots <= 0)
+            {
+                return;
+            }
+
+            List<string> orderedKeys = new List<string>(
+                retainedAutomaticScreenshots.Keys
+            );
+            orderedKeys.Sort(
+                (left, right) => -CompareVisualRelevance(left, right)
+            );
+
+            foreach (string key in orderedKeys)
+            {
+                if (availableSlots <= 0)
+                {
+                    break;
+                }
+
+                activeSession.screenshots.Add(
+                    retainedAutomaticScreenshots[key]
+                );
+                availableSlots--;
+            }
+        }
+
         private void EndActiveCaptureContext(int timestamp)
         {
             activeSession.gameEvents.Add(
@@ -511,8 +924,20 @@ private void RegisterFirstAction(int timestamp)
                 }
             );
 
+            if (activeContextActivity != null)
+            {
+                activeContextActivity.durationMs = Math.Max(
+                    0,
+                    timestamp - activeContextActivity.startedAt
+                );
+                activeContextActivity.ended = true;
+                RegisterContextAggregate(activeContextActivity);
+                TryRetainAutomaticScreenshot(activeContextActivity);
+            }
+
             activeCaptureContext = null;
             activeContextInstanceId = string.Empty;
+            activeContextActivity = null;
         }
 
         private int GetElapsedMilliseconds()

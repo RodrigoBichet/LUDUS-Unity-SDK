@@ -17,7 +17,7 @@ namespace LudusSDK
         [Tooltip("Registra automaticamente início, percurso e fim de arrastes.")]
         public bool dragPath = true;
 
-        [Tooltip("Campo reservado pelo contrato. Esta versão não coleta capturas de imagem automaticamente.")]
+        [Tooltip("Captura imagens JPEG para contextualizar o mapa de interações. Permanece desligada por padrão por privacidade e tamanho do payload.")]
         public bool screenshots = false;
 
         [Tooltip("Campo reservado pelo contrato. Esta versão não registra períodos de inatividade automaticamente.")]

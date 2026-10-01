@@ -77,9 +77,15 @@ namespace LudusSDK
     [Serializable]
     public sealed class LudusScreenshot
     {
-        public int faseIndex;
+        // Campos de fase são opcionais e preservam compatibilidade legada.
+        public int faseIndex = -1;
         public string phaseId;
+        public string contextInstanceId;
         public int timestamp;
+        public string mimeType = "image/jpeg";
+        public int widthPx;
+        public int heightPx;
+        public string screenshotBase64;
         public string caminho;
     }
 }

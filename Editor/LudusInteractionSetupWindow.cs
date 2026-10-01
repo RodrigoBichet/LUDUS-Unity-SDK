@@ -3,6 +3,7 @@ using LudusSDK;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 
 namespace LudusSDK.Editor
@@ -594,6 +595,42 @@ namespace LudusSDK.Editor
             Scene activeScene
         )
         {
+            bool hasOwnDragHandler = target
+                .GetComponents<MonoBehaviour>()
+                .Any(component =>
+                    component is IDragHandler &&
+                    !(component is LudusTrackedDraggable)
+                );
+            MonoBehaviour childDragHandler = target
+                .GetComponentsInChildren<MonoBehaviour>(true)
+                .FirstOrDefault(component =>
+                    component.gameObject != target &&
+                    component is IDragHandler &&
+                    !(component is LudusTrackedDraggable)
+                );
+
+            if (!hasOwnDragHandler && childDragHandler != null)
+            {
+                int choice = EditorUtility.DisplayDialogComplex(
+                    "O objeto arrastável parece ser um filho",
+                    $"{target.name} funciona como contêiner, mas o gesto de arraste é recebido por {childDragHandler.gameObject.name}. " +
+                        "Acompanhe o objeto que realmente se move para registrar também o evento semântico no Dashboard.",
+                    "Usar o filho",
+                    "Cancelar",
+                    "Usar o contêiner mesmo"
+                );
+
+                if (choice == 1)
+                {
+                    return;
+                }
+
+                if (choice == 0)
+                {
+                    target = childDragHandler.gameObject;
+                }
+            }
+
             LudusTrackedDraggable existing =
                 target.GetComponent<LudusTrackedDraggable>();
 

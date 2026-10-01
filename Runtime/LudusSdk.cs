@@ -140,6 +140,19 @@ namespace LudusSDK
             );
         }
 
+        public static bool TryCaptureScreenshot(out string errorMessage)
+        {
+            if (!TryGetSingleSessionController(
+                out LudusSessionController controller,
+                out errorMessage
+            ))
+            {
+                return false;
+            }
+
+            return controller.TryCaptureScreenshot(out errorMessage);
+        }
+
         public static bool TryRecordTextInputCompletion(
             string displayName,
             int characterCount,

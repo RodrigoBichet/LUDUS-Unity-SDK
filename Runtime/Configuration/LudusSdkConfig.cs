@@ -15,6 +15,15 @@ namespace LudusSDK
         SelectedScenes,
     }
 
+    public enum LudusSceneScreenshotMode
+    {
+        [InspectorName("Todas as cenas acompanhadas")]
+        AllTrackedScenes,
+
+        [InspectorName("Somente cenas marcadas")]
+        SelectedScenes,
+    }
+
     [CreateAssetMenu(
         fileName = "LudusSdkConfig",
         menuName = "LUDUS/Configuração do SDK",
@@ -88,6 +97,40 @@ namespace LudusSDK
         [Min(0f)]
         public float inactivityThresholdSeconds = 10f;
 
+        [Header("Capturas visuais")]
+
+        [InspectorName("Capturar ao iniciar cada recorte")]
+        [Tooltip("Quando Capturas visuais estiver habilitado, registra uma imagem no início de cada contexto acompanhado.")]
+        public bool captureScreenshotOnContextStart = true;
+
+        [InspectorName("Imagens automáticas nas cenas")]
+        [Tooltip("Define se todas as cenas acompanhadas ou somente cenas marcadas podem fornecer imagens para o mapa de interações.")]
+        public LudusSceneScreenshotMode sceneScreenshotMode =
+            LudusSceneScreenshotMode.AllTrackedScenes;
+
+        [InspectorName("Cenas marcadas para imagem")]
+        [Tooltip("Cenas acompanhadas que podem fornecer uma imagem quando o modo de seleção estiver ativo.")]
+        public List<string> selectedScreenshotSceneNames =
+            new List<string>();
+
+        [InspectorName("Máximo de imagens por sessão")]
+        [Tooltip("Limita uso de memória, tamanho do JSON e armazenamento no servidor.")]
+        [HideInInspector]
+        [Range(1, 20)]
+        public int maxScreenshotsPerSession = 4;
+
+        [InspectorName("Qualidade JPEG")]
+        [Tooltip("Qualidade usada na compactação. Valores menores geram arquivos mais leves.")]
+        [HideInInspector]
+        [Range(40, 90)]
+        public int screenshotJpegQuality = 70;
+
+        [InspectorName("Maior dimensão da imagem")]
+        [Tooltip("Reduz capturas muito grandes antes da compactação. A proporção da tela é preservada.")]
+        [HideInInspector]
+        [Range(640, 1920)]
+        public int screenshotMaxDimensionPx = 1280;
+
         [Header("Desenvolvimento")]
 
         [InspectorName("Exibir mensagens detalhadas no Console")]
@@ -113,6 +156,38 @@ namespace LudusSDK
             {
                 errorMessage =
                     "inactivityThresholdSeconds deve ser maior que zero quando a inatividade estiver habilitada.";
+                return false;
+            }
+
+            if (
+                capabilities.screenshots &&
+                (
+                    maxScreenshotsPerSession < 1 ||
+                    maxScreenshotsPerSession > 20 ||
+                    screenshotJpegQuality < 40 ||
+                    screenshotJpegQuality > 90 ||
+                    screenshotMaxDimensionPx < 640 ||
+                    screenshotMaxDimensionPx > 1920
+                )
+            )
+            {
+                errorMessage =
+                    "A configuração de capturas visuais está fora dos limites permitidos.";
+                return false;
+            }
+
+            if (
+                capabilities.screenshots &&
+                sceneScreenshotMode ==
+                    LudusSceneScreenshotMode.SelectedScenes &&
+                (
+                    selectedScreenshotSceneNames == null ||
+                    selectedScreenshotSceneNames.Count == 0
+                )
+            )
+            {
+                errorMessage =
+                    "Selecione ao menos uma cena para a captura visual automática.";
                 return false;
             }
 
@@ -166,6 +241,42 @@ namespace LudusSDK
             }
 
             foreach (string selectedSceneName in selectedSceneNames)
+            {
+                if (string.Equals(
+                    selectedSceneName,
+                    sceneName,
+                    StringComparison.Ordinal
+                ))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool ShouldCaptureScreenshotForScene(string sceneName)
+        {
+            if (!ShouldCaptureScene(sceneName))
+            {
+                return false;
+            }
+
+            if (
+                sceneScreenshotMode ==
+                LudusSceneScreenshotMode.AllTrackedScenes
+            )
+            {
+                return true;
+            }
+
+            if (selectedScreenshotSceneNames == null)
+            {
+                return false;
+            }
+
+            foreach (string selectedSceneName in
+                selectedScreenshotSceneNames)
             {
                 if (string.Equals(
                     selectedSceneName,

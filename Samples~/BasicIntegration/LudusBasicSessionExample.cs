@@ -33,7 +33,7 @@ public sealed class LudusBasicSessionExample : MonoBehaviour
 
         bool hasActiveSession = sessionController.HasActiveSession;
         string buttonLabel = hasActiveSession
-            ? "Encerrar sessão e exibir JSON"
+            ? "Encerrar sessão e gerar JSON"
             : "Iniciar sessão fictícia";
 
         if (GUI.Button(new Rect(32, 78, 288, 38), buttonLabel))
@@ -77,7 +77,7 @@ public sealed class LudusBasicSessionExample : MonoBehaviour
         );
     }
 
-    [ContextMenu("LUDUS/Encerrar sessão e exibir JSON")]
+    [ContextMenu("LUDUS/Encerrar sessão e gerar JSON")]
     public void EndSessionAndLogJson()
     {
         if (!TryResolveSessionController())
@@ -93,9 +93,19 @@ public sealed class LudusBasicSessionExample : MonoBehaviour
             out string errorMessage
         );
 
-        Debug.Log(ended
-            ? "[LUDUS] JSON fictício: " + json
-            : "[LUDUS] " + errorMessage);
+        if (!ended)
+        {
+            Debug.LogError("[LUDUS] " + errorMessage);
+            return;
+        }
+
+        int jsonLength = string.IsNullOrEmpty(json) ? 0 : json.Length;
+        Debug.Log(
+            "[LUDUS] Sessão fictícia encerrada. JSON gerado com "
+                + jsonLength
+                + " caracteres; o conteúdo completo não é exibido "
+                + "no Console para evitar expor ou duplicar imagens Base64."
+        );
     }
 
     private bool TryResolveSessionController()

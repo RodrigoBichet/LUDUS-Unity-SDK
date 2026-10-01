@@ -90,7 +90,9 @@ namespace LudusSDK
             LudusCaptureContext sceneContext = new LudusCaptureContext(
                 sceneName,
                 LudusCaptureContextKind.Scene.ToString(),
-                string.Empty
+                string.Empty,
+                config.ShouldCaptureScreenshotForScene(sceneName),
+                "scene:" + sceneName
             );
 
             if (sessionController.TryBeginCaptureContext(
