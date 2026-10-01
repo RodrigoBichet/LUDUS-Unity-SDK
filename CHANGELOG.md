@@ -4,6 +4,26 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 
 ## [Não publicado]
 
+## [0.1.4] - 2026-10-01
+
+### Adicionado
+
+- API tipada `LudusGameEvents` para categorias, início e conclusão de fases,
+  tentativas de arraste, acertos e erros informados pelo próprio jogo.
+- Validação imediata do tipo e payload dos eventos semânticos antes de
+  adicioná-los à sessão.
+- Atualização automática de `metrics.totalCorrect` e `metrics.totalWrong`
+  quando o jogo registra `CorrectMatch` e `WrongMatch`.
+- Testes EditMode para eventos semânticos, métricas e rejeição quando a
+  capacidade correspondente está desabilitada.
+
+### Alterado
+
+- Os campos `phaseEvents`, `correctWrong` e `categoryEvents` passam a indicar
+  integrações disponíveis pela API, mantendo-se desligados por padrão.
+- O guia de integração explica como registrar somente fatos conhecidos pelas
+  regras do jogo, preservando o caráter de apoio pedagógico da plataforma.
+
 ## [0.1.3] - 2026-10-01
 
 ### Adicionado

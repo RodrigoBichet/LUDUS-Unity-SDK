@@ -932,7 +932,7 @@ builder.Append('}');
             builder.Append('"');
         }
 
-        private static bool IsValidJsonObject(string json)
+        internal static bool IsValidJsonObject(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
             {

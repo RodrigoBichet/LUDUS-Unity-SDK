@@ -58,7 +58,7 @@ Na Unity:
 4. Informe:
 
    ```text
-   https://github.com/RodrigoBichet/LUDUS-Unity-SDK.git#v0.1.3
+   https://github.com/RodrigoBichet/LUDUS-Unity-SDK.git#v0.1.4
    ```
 
 5. Aguarde a importação terminar sem erros.
@@ -287,6 +287,41 @@ No fluxo manual, a Unity gera uma identidade técnica neutra. O vínculo com um
 aluno fictício ou autorizado é escolhido somente na importação pelo Dashboard;
 o desenvolvedor do jogo não precisa inserir `studentId` no projeto Unity.
 
+### 6.1. Informar eventos que pertencem à regra do jogo
+
+Cliques, trajetórias, arrastes e imagens são observados pelo SDK. Categoria,
+fase, acerto e erro só podem ser informados pelo próprio jogo. Quando a
+integração realmente conhecer esses fatos, habilite no asset LUDUS as
+capacidades correspondentes e use a API tipada:
+
+```csharp
+using LudusSDK;
+
+LudusGameEvents.TryCategorySelected("Alimentos", out _);
+
+LudusGameEvents.TryPhaseStarted(
+    "alimentos-1",
+    "maçã",
+    new[] { "maçã", "bola", "copo" },
+    out _
+);
+
+LudusGameEvents.TryDragAttempt("bola", "maçã", false, out _);
+LudusGameEvents.TryWrongMatch("bola", "maçã", out _);
+LudusGameEvents.TryCorrectMatch("maçã", 4.5f, out _);
+LudusGameEvents.TryPhaseCompleted(1, 1, 5f, 2, out _);
+```
+
+Habilite **Eventos de fase** somente se usar `TryPhaseStarted` ou
+`TryPhaseCompleted`; **Acertos e erros** somente se usar `TryCorrectMatch` ou
+`TryWrongMatch`; e **Categorias** somente se usar `TryCategorySelected`. O SDK
+rejeita eventos cuja capacidade esteja desligada e incrementa os totais de
+acerto e erro quando essas chamadas são aceitas.
+
+Não transforme clique, tempo parado, trajetória ou imagem em acerto, erro,
+dificuldade ou conclusão pedagógica. Esses registros fornecem evidências para
+acompanhamento e mediação docente, não diagnóstico ou avaliação conclusiva.
+
 ## 7. Validar no Editor
 
 1. Inicie uma sessão com identidade e atividade fictícias.
@@ -297,7 +332,9 @@ o desenvolvedor do jogo não precisa inserir `studentId` no projeto Unity.
 5. Encerre a sessão uma única vez.
 6. Confirme `schemaVersion`, `captureMode: "sdk"`, `source`, `sourceVersion`, `capabilities`,
    duração, viewport e coleções esperadas.
-7. Verifique que nada do jogo mudou por causa do coletor.
+7. Se integrou eventos do jogo, confirme tipos, payloads e totais de acerto e
+   erro com uma rodada fictícia que contenha pelo menos um erro e um acerto.
+8. Verifique que nada do jogo mudou por causa do coletor.
 
 Na Console, erros do SDK começam com `[LUDUS]`. Um JSON válido deve possuir pelo
 menos início e fim coerentes, `gameId`, plataforma, duração e as coleções

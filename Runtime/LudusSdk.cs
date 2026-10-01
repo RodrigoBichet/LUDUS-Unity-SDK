@@ -94,6 +94,27 @@ namespace LudusSDK
             );
         }
 
+        internal static bool TryRecordGameEvent(
+            string eventType,
+            string payloadJson,
+            out string errorMessage
+        )
+        {
+            if (!TryGetSingleSessionController(
+                out LudusSessionController controller,
+                out errorMessage
+            ))
+            {
+                return false;
+            }
+
+            return controller.TryRecordGameEvent(
+                eventType,
+                payloadJson,
+                out errorMessage
+            );
+        }
+
         public static bool TryRecordTextInputCompletion(
             string displayName,
             int characterCount,

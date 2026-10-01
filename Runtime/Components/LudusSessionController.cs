@@ -246,6 +246,19 @@ namespace LudusSDK
             );
         }
 
+        internal bool TryRecordGameEvent(
+            string eventType,
+            string payloadJson,
+            out string errorMessage
+        )
+        {
+            return lifecycle.TryRecordGameEvent(
+                eventType,
+                payloadJson,
+                out errorMessage
+            );
+        }
+
         public bool TryRecordTextInputCompletion(
             string displayName,
             int characterCount,

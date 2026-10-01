@@ -47,7 +47,7 @@ namespace LudusSDK.Tests
             Assert.That(serialized, Is.True, errorMessage);
             Assert.That(json, Does.Contain("\"schemaVersion\":\"1.0.0\""));
             Assert.That(json, Does.Contain("\"captureMode\":\"sdk\""));
-            Assert.That(json, Does.Contain("\"sourceVersion\":\"0.1.3\""));
+            Assert.That(json, Does.Contain("\"sourceVersion\":\"0.1.4\""));
             Assert.That(
                 json,
                 Does.Contain(
@@ -412,6 +412,163 @@ public void SessionLifecycle_ComContextoAtivo_RegistraTrajetoriaDeArraste()
             Assert.That(started, Is.True, startError);
             Assert.That(ended, Is.True, endError);
             Assert.That(json, Does.Contain("\"sessionId\":"));
+
+            Object.DestroyImmediate(host);
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void LudusGameEvents_ComCapacidadesHabilitadas_RegistraSemanticaEMetricas()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameId = "jogo-semantico";
+            config.capabilities.phaseEvents = true;
+            config.capabilities.correctWrong = true;
+            config.capabilities.categoryEvents = true;
+
+            GameObject host = new GameObject("LudusGameEventsTeste");
+            LudusSessionController controller =
+                host.AddComponent<LudusSessionController>();
+            controller.Configure(config);
+
+            Assert.That(
+                LudusSdk.TryStartSession(
+                    "000000000000000000000012",
+                    "Estudante Fictício",
+                    out string startError
+                ),
+                Is.True,
+                startError
+            );
+            Assert.That(
+                LudusGameEvents.TryCategorySelected(
+                    "Alimentos",
+                    out string categoryError
+                ),
+                Is.True,
+                categoryError
+            );
+            Assert.That(
+                LudusGameEvents.TryPhaseStarted(
+                    "alimentos-1",
+                    "maçã",
+                    new[] { "maçã", "bola", "copo" },
+                    out string phaseError
+                ),
+                Is.True,
+                phaseError
+            );
+            Assert.That(
+                LudusGameEvents.TryDragAttempt(
+                    "bola",
+                    "maçã",
+                    false,
+                    out string dragError
+                ),
+                Is.True,
+                dragError
+            );
+            Assert.That(
+                LudusGameEvents.TryWrongMatch(
+                    "bola",
+                    "maçã",
+                    out string wrongError
+                ),
+                Is.True,
+                wrongError
+            );
+            Assert.That(
+                LudusGameEvents.TryCorrectMatch(
+                    "maçã",
+                    4.5f,
+                    out string correctError
+                ),
+                Is.True,
+                correctError
+            );
+            Assert.That(
+                LudusGameEvents.TryPhaseCompleted(
+                    1,
+                    1,
+                    5f,
+                    2,
+                    out string completedError
+                ),
+                Is.True,
+                completedError
+            );
+            Assert.That(
+                LudusSdk.TryEndSession(
+                    out string json,
+                    out string endError
+                ),
+                Is.True,
+                endError
+            );
+
+            Assert.That(
+                controller.LastCompletedSession.metrics.totalCorrect,
+                Is.EqualTo(1)
+            );
+            Assert.That(
+                controller.LastCompletedSession.metrics.totalWrong,
+                Is.EqualTo(1)
+            );
+            Assert.That(json, Does.Contain("\"CategorySelected\""));
+            Assert.That(json, Does.Contain("\"PhaseStarted\""));
+            Assert.That(json, Does.Contain("\"DragAttempt\""));
+            Assert.That(json, Does.Contain("\"CorrectMatch\""));
+            Assert.That(json, Does.Contain("\"WrongMatch\""));
+            Assert.That(json, Does.Contain("\"PhaseCompleted\""));
+            Assert.That(json, Does.Contain("\"category\":\"Alimentos\""));
+            Assert.That(json, Does.Contain("\"totalCorrect\":1"));
+            Assert.That(json, Does.Contain("\"totalWrong\":1"));
+
+            Object.DestroyImmediate(host);
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void LudusGameEvents_ComCapacidadeDesabilitada_RejeitaEvento()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameId = "jogo-semantico";
+
+            GameObject host = new GameObject("LudusGameEventsSemCapacidadeTeste");
+            LudusSessionController controller =
+                host.AddComponent<LudusSessionController>();
+            controller.Configure(config);
+
+            Assert.That(
+                LudusSdk.TryStartSession(
+                    "000000000000000000000013",
+                    "Estudante Fictício",
+                    out string startError
+                ),
+                Is.True,
+                startError
+            );
+
+            bool recorded = LudusGameEvents.TryCorrectMatch(
+                "maçã",
+                2f,
+                out string eventError
+            );
+
+            Assert.That(recorded, Is.False);
+            Assert.That(eventError, Does.Contain("correctWrong"));
+            Assert.That(
+                controller.LastCompletedSession,
+                Is.Null
+            );
+
+            Assert.That(
+                LudusSdk.TryEndSession(out _, out string endError),
+                Is.True,
+                endError
+            );
 
             Object.DestroyImmediate(host);
             Object.DestroyImmediate(config);

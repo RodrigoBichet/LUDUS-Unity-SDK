@@ -28,13 +28,13 @@ namespace LudusSDK
 
         [Header("Eventos informados pelo jogo")]
 
-        [Tooltip("Campo reservado pelo contrato. Esta versão não oferece uma integração específica para fases.")]
+        [Tooltip("Habilite quando o jogo informar início ou conclusão de fases pela API LudusGameEvents.")]
         public bool phaseEvents = false;
 
-        [Tooltip("Campo reservado pelo contrato. Esta versão não oferece uma integração específica para acertos e erros.")]
+        [Tooltip("Habilite quando o jogo informar acertos e erros pela API LudusGameEvents.")]
         public bool correctWrong = false;
 
-        [Tooltip("Campo reservado pelo contrato. Esta versão não oferece uma integração específica para categorias.")]
+        [Tooltip("Habilite quando o jogo informar categorias ou atividades pela API LudusGameEvents.")]
         public bool categoryEvents = false;
 
         [Tooltip("O jogo pode registrar eventos semânticos próprios.")]

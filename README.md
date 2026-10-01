@@ -57,7 +57,7 @@ No projeto Unity que receberá o SDK:
 4. Informe:
 
    ```text
-   https://github.com/RodrigoBichet/LUDUS-Unity-SDK.git#v0.1.3
+   https://github.com/RodrigoBichet/LUDUS-Unity-SDK.git#v0.1.4
    ```
 
 5. Aguarde a Unity importar o pacote.
@@ -238,6 +238,30 @@ public sealed class MeuFluxoLudus : MonoBehaviour
 Chame `IniciarSessaoParaImportarDepois` antes da primeira
 cena acompanhada. Chame `EncerrarSessao` quando a atividade for concluída,
 cancelada ou quando o fluxo pedagógico determinar o fim da sessão.
+
+Quando o jogo conhece regras pedagógicas próprias, como categoria, fase,
+acerto e erro, use a API tipada `LudusGameEvents`. Habilite no asset somente
+as capacidades que o jogo realmente informa: **Eventos de fase**, **Acertos e
+erros** e **Categorias**. O SDK rejeita o evento se a capacidade correspondente
+estiver desligada.
+
+```csharp
+LudusGameEvents.TryCategorySelected("Alimentos", out _);
+LudusGameEvents.TryPhaseStarted(
+    "alimentos-1",
+    "maçã",
+    new[] { "maçã", "bola", "copo" },
+    out _
+);
+LudusGameEvents.TryDragAttempt("bola", "maçã", false, out _);
+LudusGameEvents.TryWrongMatch("bola", "maçã", out _);
+LudusGameEvents.TryCorrectMatch("maçã", 4.5f, out _);
+LudusGameEvents.TryPhaseCompleted(1, 1, 5f, 2, out _);
+```
+
+Esses métodos atualizam o contrato semântico e os totais de acerto e erro da
+sessão. Use-os somente para fatos conhecidos pela própria regra do jogo. O SDK
+não deduz desempenho pedagógico a partir de cliques, trajetórias ou imagens.
 
 No fluxo de importação manual, o desenvolvedor não informa `studentId` na
 Unity. O SDK usa internamente uma marca de sessão sem vínculo, e o Dashboard

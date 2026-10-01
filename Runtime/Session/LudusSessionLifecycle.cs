@@ -499,6 +499,126 @@ public bool TryRecordDragPoint(
             return true;
         }
 
+        internal bool TryRecordGameEvent(
+            string eventType,
+            string payloadJson,
+            out string errorMessage
+        )
+        {
+            if (!HasActiveSession)
+            {
+                errorMessage =
+                    "Não existe sessão ativa para registrar um evento do jogo.";
+                return false;
+            }
+
+            string normalizedEventType = eventType?.Trim() ?? string.Empty;
+            string normalizedPayload = string.IsNullOrWhiteSpace(payloadJson)
+                ? "{}"
+                : payloadJson.Trim();
+
+            if (
+                normalizedEventType.Length == 0 ||
+                normalizedEventType.Length > 100
+            )
+            {
+                errorMessage =
+                    "O tipo do evento deve possuir entre 1 e 100 caracteres.";
+                return false;
+            }
+
+            if (
+                normalizedPayload.Length > 100000 ||
+                !LudusJsonSerializer.IsValidJsonObject(normalizedPayload)
+            )
+            {
+                errorMessage =
+                    "O payload do evento deve ser um objeto JSON válido de até 100000 caracteres.";
+                return false;
+            }
+
+            bool isPhaseEvent = normalizedEventType.StartsWith(
+                "Phase",
+                StringComparison.Ordinal
+            );
+            bool isCorrectWrongEvent =
+                normalizedEventType == "CorrectMatch" ||
+                normalizedEventType == "WrongMatch";
+            bool isCategoryEvent = normalizedEventType.StartsWith(
+                "Category",
+                StringComparison.Ordinal
+            );
+
+            if (isPhaseEvent && !activeSession.capabilities.phaseEvents)
+            {
+                errorMessage =
+                    "A capacidade phaseEvents deve estar habilitada para registrar eventos de fase.";
+                return false;
+            }
+
+            if (
+                isCorrectWrongEvent &&
+                !activeSession.capabilities.correctWrong
+            )
+            {
+                errorMessage =
+                    "A capacidade correctWrong deve estar habilitada para registrar acertos e erros.";
+                return false;
+            }
+
+            if (
+                isCategoryEvent &&
+                !activeSession.capabilities.categoryEvents
+            )
+            {
+                errorMessage =
+                    "A capacidade categoryEvents deve estar habilitada para registrar categorias.";
+                return false;
+            }
+
+            if (
+                !isPhaseEvent &&
+                !isCorrectWrongEvent &&
+                !isCategoryEvent &&
+                !activeSession.capabilities.customEvents
+            )
+            {
+                errorMessage =
+                    "A capacidade customEvents deve estar habilitada para registrar este evento do jogo.";
+                return false;
+            }
+
+            if (activeSession.gameEvents.Count >= MaxGameEvents)
+            {
+                errorMessage = "O limite de eventos da sessão foi atingido.";
+                return false;
+            }
+
+            int timestamp = GetElapsedMilliseconds();
+
+            activeSession.gameEvents.Add(
+                new LudusGameEvent
+                {
+                    eventType = normalizedEventType,
+                    timestamp = timestamp,
+                    payloadJson = normalizedPayload,
+                }
+            );
+
+            if (normalizedEventType == "CorrectMatch")
+            {
+                activeSession.metrics.totalCorrect++;
+            }
+            else if (normalizedEventType == "WrongMatch")
+            {
+                activeSession.metrics.totalWrong++;
+            }
+
+            RegisterFirstAction(timestamp);
+            errorMessage = string.Empty;
+            return true;
+        }
+
         public bool TryRecordScreenshot(
             string contextInstanceId,
             int widthPx,
