@@ -18,9 +18,10 @@ Ao terminar, o jogo deverá:
 4. ter esse JSON validado e importado no LUDUS Acompanha;
 5. exibir a sessão e o mapa de interações no Dashboard.
 
-Esta versão de avaliação não registra acertos, erros, fases, categorias ou
-objetivos pedagógicos. O escopo validado é a coleta das interações observáveis
-descritas neste guia.
+Acertos, erros, fases, categorias e objetivos pedagógicos só são registrados
+quando o próprio jogo os informa pela API ou pela ponte semântica visual. Sem
+essa integração explícita, o escopo continua sendo apenas a coleta das
+interações observáveis descritas neste guia.
 
 ### Caminho mínimo
 
@@ -160,7 +161,10 @@ desenvolvedora.
 Em **Capturas visuais**, a imagem da Game View é opcional e permanece
 desativada por padrão. Quando habilitada, escolha todas as cenas acompanhadas
 ou arraste somente as cenas cuja imagem realmente ajuda a interpretar o mapa.
-O SDK usa JPEG, maior dimensão de 1280 px, qualidade 70 e conserva até quatro
+O SDK prepara a imagem quando o recorte é aberto e captura após a primeira
+interação relevante. Isso evita que uma tela de carregamento exibida na entrada
+da cena se torne o fundo do mapa. O SDK usa JPEG, maior dimensão de 1280 px,
+qualidade 70 e conserva até quatro
 imagens automáticas por sessão. Se houver mais recortes, prioriza os que tiveram
 mais interações e usa o tempo como desempate. Essas definições ficam internas
 para evitar que uma configuração acidental produza arquivos muito pesados.
@@ -232,6 +236,31 @@ ao recorte ativo. Para uma cena que representa uma única atividade, selecione
 somente a cena e não crie recortes extras.
 
 ## 6. Ligar o ciclo de vida da sessão ao jogo
+
+### Opção visual: escopo da atividade
+
+Adicione **LUDUS > Fluxo > Sessão acompanhada** a um objeto que permaneça
+ativo durante toda a atividade. Por padrão, ele inicia uma sessão para
+importação manual ao ser ativado e a encerra ao ser desativado ou quando sua
+cena é fechada.
+
+O escopo representa a atividade completa, não cada tela interna. Se uma cena
+randomiza vários Canvas e depois mostra um Canvas final de feedback, mantenha o
+escopo em um objeto-raiz estável: todos esses momentos formarão uma única
+sessão. Canvas opcionais continuam podendo ser usados como recortes de
+observação, sem reiniciar a sessão.
+
+Quando a atividade começa ou termina sem trocar de cena, desmarque o
+automatismo necessário e ligue os métodos `IniciarSessao` ou `EncerrarSessao`
+ao `UnityEvent` real do jogo. O componente só encerra uma sessão que ele próprio
+iniciou, evitando que um painel auxiliar finalize outro fluxo por engano.
+
+Os eventos **Depois de iniciar a sessão** e **Antes de encerrar a sessão**
+podem acionar uma Ponte semântica para registrar categoria, início e conclusão
+de fase. Essa ligação permanece explícita; o escopo não deduz resultados a
+partir da troca de Canvas ou de cena.
+
+### Opção por API C#
 
 Para um fluxo de importação manual, chame o SDK quando o jogador realmente
 começar e terminar a atividade:
@@ -318,23 +347,133 @@ Habilite **Eventos de fase** somente se usar `TryPhaseStarted` ou
 rejeita eventos cuja capacidade esteja desligada e incrementa os totais de
 acerto e erro quando essas chamadas são aceitas.
 
+#### 6.2. Conectar um UnityEvent sem escrever chamadas C#
+
+Quando o jogo já possui um `UnityEvent` disparado no momento em que conhece o
+resultado, adicione **LUDUS > Ponte semântica do jogo** a um objeto da atividade.
+Configure uma ponte por atividade ou fase. Depois:
+
+1. localize no Inspector o `UnityEvent` que o jogo já dispara;
+2. acrescente um novo ouvinte sem remover os ouvintes do jogo;
+3. arraste o objeto que contém `LudusSemanticBridge`;
+4. selecione `RegistrarAcerto`, `RegistrarErro`, `RegistrarInicioDeFase` ou o
+   método correspondente;
+5. habilite no asset LUDUS as capacidades realmente conectadas;
+6. valide uma rodada fictícia com pelo menos um erro e um acerto.
+
+`RegistrarInicioDeFase` reinicia o cronômetro e os contadores locais da ponte.
+`RegistrarConclusaoDeFase` envia esses totais e o tempo transcorrido. Para um
+arraste avaliado, o mesmo evento do jogo pode chamar primeiro o método de
+tentativa e depois `RegistrarAcerto` ou `RegistrarErro`.
+
+A ponte não interpreta tags, colisões, pontuação ou scripts. Ela apenas recebe
+uma notificação que o jogo já classificou. Se não houver `UnityEvent`
+compatível, use a API C# ou um adaptador apoiado pelo SDK; sem essa ligação, não
+declare as capacidades semânticas.
+
+#### 6.3. Arraste de UI avaliado por tag
+
+Quando uma área de UI já recebe `OnDrop` pelo `EventSystem` e a regra do jogo
+considera correta uma tag conhecida:
+
+1. abra a cena da atividade;
+2. abra **LUDUS > Configurar resultados da cena** e informe seu nome ou
+   categoria;
+3. revise os destinos encontrados e suas tags;
+4. desmarque qualquer destino cuja tag não represente a resposta correta;
+5. clique em **Aplicar configuração confirmada**;
+6. salve a cena e use **LUDUS > Validar integração semântica**.
+
+O assistente cria ou reutiliza uma Ponte semântica compartilhada, conecta
+categoria, início e conclusão da fase ao escopo e adiciona o adaptador aos
+destinos confirmados. Ele também habilita `categoryEvents`, `phaseEvents`,
+`correctWrong` e `customEvents` no asset de configuração. Executá-lo novamente
+atualiza a configuração sem duplicar componentes ou ouvintes.
+
+Quando a cena ainda não possui uma **Sessão acompanhada**, o assistente também
+cria esse objeto automaticamente na raiz e usa o nome informado. Se houver um
+único escopo, ele é reutilizado; múltiplos escopos são bloqueados para evitar
+que o SDK escolha silenciosamente o ciclo de vida errado.
+
+Para cada destino confirmado, o assistente também prepara o Canvas mais próximo
+como área de observação. Durante o jogo, a tag continua sendo a regra técnica de
+acerto ou erro, enquanto o SDK procura o texto, a imagem ou o sprite atualmente
+visível para registrar nomes pedagógicos. A tentativa inclui a peça escolhida,
+a resposta visual esperada e as alternativas visíveis naquele Canvas.
+
+Objetos `Untagged` ficam visíveis como incompatíveis. O assistente não conclui
+que toda tag significa acerto: a confirmação humana preserva a regra declarada
+pelo jogo. Para configurar um destino isoladamente, selecione a área, adicione
+**LUDUS > Adaptadores > Resultado de arraste por tag**, escolha a tag e indique
+uma Ponte semântica compartilhada.
+7. teste uma peça com a tag correta e outra com uma tag diferente.
+
+O adaptador usa a peça informada por `PointerEventData.pointerDrag`. Ele apenas
+observa o drop: não move a peça, não determina sua posição final e não executa
+a resposta visual do jogo. Se o jogo usa física, triggers, raycasts ou código
+próprio sem `OnDrop`, este adaptador não se aplica.
+
+#### 6.4. Trigger ou colisão avaliado por tag
+
+Adicione **LUDUS > Adaptadores > Resultado de contato por tag** ao objeto que
+recebe o contato. Escolha `Trigger2D`, `Collision2D`, `Trigger3D` ou
+`Collision3D`, selecione a tag correta e indique a resposta esperada. Mantenha
+a busca nos objetos pais quando o collider estiver em um filho da peça.
+
+Colliders, rigidbodies, `Is Trigger`, layers e a matriz de colisão continuam sob
+responsabilidade do jogo. O adaptador apenas observa o callback e não altera a
+física ou a posição dos objetos.
+
+#### 6.5. Alternativa correta ou incorreta em botão
+
+Em cada alternativa com `Button`, adicione **LUDUS > Adaptadores > Resultado de
+botão**. Escolha se ela representa acerto ou erro e informe os nomes exibidos
+no Dashboard. O componente preserva todos os listeners existentes de
+`Button.onClick`.
+
+#### 6.6. Meta por valor ou pontuação
+
+Adicione **LUDUS > Adaptadores > Meta por valor ou pontuação** ao controlador
+da atividade e configure:
+
+- valor da meta;
+- comparação maior ou igual, menor ou igual, ou igualdade com tolerância;
+- acerto, conclusão de fase ou ambos ao atingir a meta;
+- registro único ou repetível.
+
+Ligue um `UnityEvent` do jogo a `AdicionarUm`, `SubtrairUm`, `Adicionar`,
+`DefinirValor` ou `AvaliarAgora`. O adaptador mantém somente seu valor de
+integração; ele não lê nem modifica variáveis privadas do placar do jogo.
+
+Não trate automaticamente toda troca de cena como conclusão. Menus, retorno,
+cancelamento e reinício também podem trocar cenas. A progressão deve ser ligada
+ao evento real do jogo ou a um adaptador de cena configurado explicitamente.
+
 Não transforme clique, tempo parado, trajetória ou imagem em acerto, erro,
 dificuldade ou conclusão pedagógica. Esses registros fornecem evidências para
 acompanhamento e mediação docente, não diagnóstico ou avaliação conclusiva.
 
 ## 7. Validar no Editor
 
-1. Inicie uma sessão com identidade e atividade fictícias.
-2. Teste pelo menos um botão, um movimento e um arraste configurado.
-3. Se houver campo de texto, digite apenas conteúdo fictício e confirme que o
+1. Abra **LUDUS > Validar integração semântica** e corrija os erros estruturais
+   indicados. A janela verifica base, configuração e capacidades exigidas pelos
+   adaptadores, mas não avalia a regra interna do jogo.
+2. Inicie uma sessão com identidade e atividade fictícias.
+3. Teste pelo menos um botão, um movimento e um arraste configurado.
+4. Se houver campo de texto, digite apenas conteúdo fictício e confirme que o
    texto não aparece no JSON.
-4. Se habilitou captura visual, aguarde a imagem terminar antes de encerrar.
-5. Encerre a sessão uma única vez.
-6. Confirme `schemaVersion`, `captureMode: "sdk"`, `source`, `sourceVersion`, `capabilities`,
+5. Se habilitou captura visual, aguarde a imagem terminar antes de encerrar.
+6. Encerre a sessão uma única vez.
+7. Confirme `schemaVersion`, `captureMode: "sdk"`, `source`, `sourceVersion`, `capabilities`,
    duração, viewport e coleções esperadas.
-7. Se integrou eventos do jogo, confirme tipos, payloads e totais de acerto e
+8. Se integrou eventos do jogo, confirme tipos, payloads e totais de acerto e
    erro com uma rodada fictícia que contenha pelo menos um erro e um acerto.
-8. Verifique que nada do jogo mudou por causa do coletor.
+9. Verifique que nada do jogo mudou por causa do coletor.
+
+Uma ponte conectada manualmente por `UnityEvent` recebe apenas um aviso de
+revisão: o Editor não consegue provar que o evento escolhido pelo jogo significa
+o resultado descrito. Adaptadores conhecidos podem ser verificados com mais
+precisão porque declaram quais capacidades do contrato utilizam.
 
 Na Console, erros do SDK começam com `[LUDUS]`. Um JSON válido deve possuir pelo
 menos início e fim coerentes, `gameId`, plataforma, duração e as coleções
@@ -439,8 +578,9 @@ eventos semânticos que tenham sido informados explicitamente pelo jogo.
 - O SDK coleta evidências de interação e apoia o acompanhamento pedagógico; ele
   não diagnostica, classifica clinicamente nem mede aprendizagem de forma
   conclusiva.
-- Acertos, erros, fases, categorias e objetivos pedagógicos estão fora do
-  escopo desta versão de avaliação e permanecem desativados no contrato.
+- Acertos, erros, fases, categorias e objetivos pedagógicos permanecem
+  desativados por padrão e só devem ser habilitados quando forem informados
+  explicitamente pelo jogo pela API ou pela ponte semântica.
 - Capturas visuais são opcionais, limitadas e devem ser usadas somente com
   finalidade definida e autorização adequada.
 - Testar no Editor é necessário, mas o aceite final de uma integração WebGL

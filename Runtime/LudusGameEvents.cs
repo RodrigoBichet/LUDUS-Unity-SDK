@@ -63,6 +63,25 @@ namespace LudusSDK
             out string errorMessage
         )
         {
+            return TryDragAttempt(
+                draggedItem,
+                targetItem,
+                string.Empty,
+                Array.Empty<string>(),
+                correct,
+                out errorMessage
+            );
+        }
+
+        public static bool TryDragAttempt(
+            string draggedItem,
+            string targetItem,
+            string expectedItem,
+            string[] options,
+            bool correct,
+            out string errorMessage
+        )
+        {
             if (!TryRequireText(
                 draggedItem,
                 "draggedItem",
@@ -77,12 +96,42 @@ namespace LudusSDK
                 return false;
             }
 
+            if (
+                !string.IsNullOrWhiteSpace(expectedItem) &&
+                !TryRequireText(
+                    expectedItem,
+                    "expectedItem",
+                    out errorMessage
+                )
+            )
+            {
+                return false;
+            }
+
+            string[] normalizedOptions = options ?? Array.Empty<string>();
+            normalizedOptions = (string[])normalizedOptions.Clone();
+
+            for (int index = 0; index < normalizedOptions.Length; index++)
+            {
+                string option = normalizedOptions[index];
+                if (!TryRequireText(option, "options", out errorMessage))
+                {
+                    return false;
+                }
+
+                normalizedOptions[index] = option.Trim();
+            }
+
             return TryRecord(
                 "DragAttempt",
                 new DragAttemptPayload
                 {
                     draggedItem = draggedItem.Trim(),
                     targetItem = targetItem.Trim(),
+                    expectedItem = string.IsNullOrWhiteSpace(expectedItem)
+                        ? string.Empty
+                        : expectedItem.Trim(),
+                    options = normalizedOptions,
                     correct = correct,
                 },
                 out errorMessage
@@ -159,6 +208,25 @@ namespace LudusSDK
             out string errorMessage
         )
         {
+            return TryPhaseCompleted(
+                null,
+                correct,
+                wrong,
+                timeSeconds,
+                stars,
+                out errorMessage
+            );
+        }
+
+        internal static bool TryPhaseCompleted(
+            LudusSessionController sessionController,
+            int correct,
+            int wrong,
+            float timeSeconds,
+            int stars,
+            out string errorMessage
+        )
+        {
             if (correct < 0 || wrong < 0 || stars < 0)
             {
                 errorMessage =
@@ -172,6 +240,7 @@ namespace LudusSDK
             }
 
             return TryRecord(
+                sessionController,
                 "PhaseCompleted",
                 new PhaseCompletedPayload
                 {
@@ -190,9 +259,35 @@ namespace LudusSDK
             out string errorMessage
         )
         {
+            return TryRecord(
+                null,
+                eventType,
+                payload,
+                out errorMessage
+            );
+        }
+
+        private static bool TryRecord(
+            LudusSessionController sessionController,
+            string eventType,
+            object payload,
+            out string errorMessage
+        )
+        {
+            string payloadJson = JsonUtility.ToJson(payload);
+
+            if (sessionController != null)
+            {
+                return sessionController.TryRecordGameEvent(
+                    eventType,
+                    payloadJson,
+                    out errorMessage
+                );
+            }
+
             return LudusSdk.TryRecordGameEvent(
                 eventType,
-                JsonUtility.ToJson(payload),
+                payloadJson,
                 out errorMessage
             );
         }
@@ -249,6 +344,8 @@ namespace LudusSDK
         {
             public string draggedItem;
             public string targetItem;
+            public string expectedItem;
+            public string[] options;
             public bool correct;
         }
 

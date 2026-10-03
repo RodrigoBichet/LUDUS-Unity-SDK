@@ -99,8 +99,8 @@ namespace LudusSDK
 
         [Header("Capturas visuais")]
 
-        [InspectorName("Capturar ao iniciar cada recorte")]
-        [Tooltip("Quando Capturas visuais estiver habilitado, registra uma imagem no início de cada contexto acompanhado.")]
+        [InspectorName("Capturar após a primeira interação")]
+        [Tooltip("Quando Capturas visuais estiver habilitado, prepara uma imagem para cada contexto acompanhado e a registra após a primeira interação significativa, evitando telas de carregamento.")]
         public bool captureScreenshotOnContextStart = true;
 
         [InspectorName("Imagens automáticas nas cenas")]

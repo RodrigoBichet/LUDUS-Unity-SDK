@@ -3,6 +3,7 @@
     "rootNamespace": "LudusSDK.Tests",
   "references": [
     "Ludus.Unity",
+    "Ludus.Unity.Editor",
     "Unity.ugui",
     "Unity.TextMeshPro"
   ],

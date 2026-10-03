@@ -189,8 +189,10 @@ cena marcada, a coleta retoma automaticamente.
 
 As **Capturas visuais** são opcionais e permanecem desativadas por padrão. Ao
 habilitá-las, escolha se todas as cenas acompanhadas ou somente cenas marcadas
-podem fornecer uma imagem para o mapa. O SDK captura a Game View completa no
-início do recorte, reduz a maior dimensão para 1280 px, compacta em JPEG com
+podem fornecer uma imagem para o mapa. O SDK prepara a captura quando o recorte
+é aberto e registra a Game View completa após a primeira interação relevante,
+evitando usar uma tela intermediária de carregamento como referência. Depois,
+reduz a maior dimensão para 1280 px, compacta em JPEG com
 qualidade 70 e conserva no máximo quatro imagens automáticas por sessão. Quando
 existem mais recortes, prioriza os que receberam mais interações e usa o tempo
 como desempate. Esses limites ficam internos para evitar configurações pesadas
@@ -207,6 +209,18 @@ necessário preenchê-lo.
 
 O jogo é quem sabe quando um estudante foi identificado e quando a atividade
 terminou. Conecte estes dois momentos ao fluxo existente do jogo:
+
+Sem escrever código, adicione **LUDUS > Fluxo > Sessão acompanhada** a um
+objeto que permaneça ativo durante toda a atividade. O componente pode iniciar
+ao ser ativado e encerrar ao ser desativado ou quando a cena for fechada.
+
+Uma cena pode conter vários Canvas, painéis e etapas aleatórias: eles continuam
+na mesma sessão enquanto o objeto do escopo permanecer ativo. Para atividades
+que começam ou terminam sem ativar/desativar o objeto, ligue `IniciarSessao` e
+`EncerrarSessao` aos `UnityEvent` correspondentes. Os eventos opcionais do
+escopo também podem acionar uma Ponte semântica no início e antes do fim.
+
+Se o jogo preferir fazer a integração por código, use a mesma API pública:
 
 ```csharp
 using LudusSDK;
@@ -262,6 +276,127 @@ LudusGameEvents.TryPhaseCompleted(1, 1, 5f, 2, out _);
 Esses métodos atualizam o contrato semântico e os totais de acerto e erro da
 sessão. Use-os somente para fatos conhecidos pela própria regra do jogo. O SDK
 não deduz desempenho pedagógico a partir de cliques, trajetórias ou imagens.
+
+### Conectar eventos pelo Inspector, sem alterar scripts
+
+Quando o jogo já expõe um `UnityEvent` para o resultado ou a progressão,
+adicione **LUDUS > Ponte semântica do jogo** a um objeto da atividade. Configure
+uma ponte por atividade ou fase e, no evento existente, arraste esse objeto e
+escolha um dos métodos públicos:
+
+- `RegistrarCategoriaSelecionada`;
+- `RegistrarInicioDeFase`;
+- `RegistrarTentativaDeArrasteCorreta` ou
+  `RegistrarTentativaDeArrasteIncorreta`;
+- `RegistrarAcerto` ou `RegistrarErro`;
+- `RegistrarConclusaoDeFase`.
+
+A ponte mantém o cronômetro e os contadores desde o último início de fase. Em
+uma tentativa de arraste, o mesmo `UnityEvent` pode chamar o método de tentativa
+e depois o método de acerto ou erro. As capacidades correspondentes ainda
+precisam estar habilitadas no asset de configuração LUDUS.
+
+Esse componente não inspeciona scripts, tags ou pontuação para adivinhar o
+resultado. Se o jogo não expõe um evento compatível, use a API C# acima ou um
+adaptador específico. Sem uma dessas ligações, a sessão permanece válida com
+somente as evidências observacionais disponíveis.
+
+#### Adaptador de arraste por tag
+
+Para cenas com vários destinos, prefira abrir **LUDUS > Configurar resultados
+da cena**. O assistente localiza objetos que já recebem `OnDrop`, apresenta a
+tag de cada destino para confirmação e configura uma única ponte compartilhada.
+Ele também liga categoria, início e conclusão da fase ao escopo da sessão e
+habilita as capacidades necessárias no asset LUDUS. Objetos `Untagged` são
+exibidos como incompatíveis e não são configurados automaticamente.
+
+Informe o nome da atividade ou categoria na própria janela. Se a cena ainda
+não possuir uma **Sessão acompanhada**, o assistente cria esse objeto na raiz
+automaticamente; se já existir uma, ele a reutiliza. Mais de um escopo na mesma
+cena continua sendo tratado como ambíguo e precisa ser corrigido manualmente.
+
+O botão **Aplicar configuração confirmada** adiciona somente componentes LUDUS
+e pode ser executado novamente sem duplicar adaptadores ou ouvintes. A decisão
+continua sendo do integrador: confirme apenas destinos em que a tag realmente
+representa a resposta correta segundo a regra existente do jogo.
+
+A própria janela oferece os botões **Anterior** e **Próxima** para percorrer as
+cenas habilitadas no Build Profile. Quando houver alterações ainda não salvas,
+o Unity pergunta se elas devem ser salvas, descartadas ou se a troca deve ser
+cancelada. Ao abrir outra cena, o nome sugerido volta a ser o nome daquela cena
+ou o nome pedagógico já salvo em sua Sessão acompanhada; revise esse texto antes
+de aplicar. Cenas de menu, carregamento ou outras telas sem destinos compatíveis
+podem simplesmente ser ignoradas no fluxo guiado.
+
+Nas cenas compatíveis, **Aplicar e abrir próxima** configura somente os destinos
+confirmados e então reutiliza o mesmo diálogo de salvamento antes de avançar.
+Isso reduz a repetição entre várias atividades sem aplicar regras em lote e sem
+eliminar a revisão do nome pedagógico e das tags de cada cena.
+
+O assistente também marca o Canvas de cada destino confirmado como área de
+observação. Em tempo de execução, a tag continua decidindo acerto ou erro, mas
+o SDK usa prioritariamente o texto, a imagem ou o sprite visível para registrar
+a peça arrastada, a resposta esperada e as alternativas daquele Canvas.
+
+Para arrastes de UI que utilizam o `EventSystem`, adicione **LUDUS >
+Adaptadores > Resultado de arraste por tag** à área que recebe o drop. Selecione
+a tag considerada correta e informe nomes legíveis para o destino e para a
+resposta esperada. Indique uma Ponte semântica compartilhada ou mantenha uma
+única ponte na cena para que o adaptador a localize automaticamente.
+
+Quando a área recebe `OnDrop`, o adaptador compara a tag da peça indicada por
+`pointerDrag` e pode registrar tanto `DragAttempt` quanto `CorrectMatch` ou
+`WrongMatch`. Os nomes legíveis podem ficar vazios para serem resolvidos pelo
+conteúdo visual ativo no momento da tentativa. Ele não move, reposiciona nem
+devolve a peça e não substitui a lógica visual do jogo.
+
+Esse adaptador cobre somente destinos que recebem `OnDrop` pelo `EventSystem`.
+Arrastes implementados exclusivamente por colisão, trigger, raycast ou código
+próprio precisam de outro adaptador ou da API C#.
+
+#### Adaptador de contato por tag
+
+Para jogos que usam física, adicione **LUDUS > Adaptadores > Resultado de
+contato por tag** ao objeto que recebe o contato. Escolha entre trigger ou
+colisão 2D/3D, selecione a tag correta e indique a resposta esperada. A busca
+opcional nos objetos pais cobre o caso comum em que o collider pertence a um
+filho e a tag está no objeto principal.
+
+O jogo continua responsável por `Collider`, `Rigidbody`, layers, matriz de
+colisão e pela resposta visual. O adaptador somente observa o callback
+selecionado e registra `CorrectMatch` ou `WrongMatch`.
+
+#### Adaptador de alternativas por botão
+
+Adicione **LUDUS > Adaptadores > Resultado de botão** a uma alternativa com
+`Button`. Marque-a como correta ou incorreta e informe os nomes da resposta
+dada e esperada. O adaptador acrescenta um listener a `Button.onClick` sem
+remover os listeners existentes do jogo.
+
+#### Adaptador de meta por valor ou pontuação
+
+Adicione **LUDUS > Adaptadores > Meta por valor ou pontuação** ao controlador
+da atividade. Configure a meta, a comparação e o evento semântico desejado.
+Ligue os eventos já existentes no jogo a `AdicionarUm`, `SubtrairUm`,
+`Adicionar`, `DefinirValor` ou `AvaliarAgora`.
+
+O adaptador não procura placares ou campos privados por reflection. Um jogo que
+não expõe mudança de pontuação por `UnityEvent` ainda precisa usar a API C# ou
+um adaptador próprio. Por padrão, a meta é registrada somente uma vez até que
+`ReiniciarMeta` ou `ReiniciarValorEMeta` seja chamado.
+
+### Validar a integração semântica
+
+Depois de configurar uma cena, abra **LUDUS > Validar integração semântica**.
+A janela verifica se existe uma única base `LudusSessionController`, se ela tem
+um asset de configuração e se as capacidades exigidas pelos adaptadores estão
+habilitadas. As opções ficam em **Resultados informados pelo jogo** no asset
+LUDUS. Cada problema ligado a um objeto oferece um botão para selecioná-lo.
+
+Essa validação é estrutural: ela não executa a atividade, não interpreta a
+regra pedagógica e não confirma que um `UnityEvent` manual representa realmente
+um acerto ou erro. Essa ligação continua sendo revisada e testada pelo
+desenvolvedor do jogo.
 
 No fluxo de importação manual, o desenvolvedor não informa `studentId` na
 Unity. O SDK usa internamente uma marca de sessão sem vínculo, e o Dashboard

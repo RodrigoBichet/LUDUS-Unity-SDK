@@ -328,6 +328,21 @@ namespace LudusSDK.Editor
     public sealed class LudusSdkConfigEditor : UnityEditor.Editor
     {
         private static bool showAdvancedConnectionOptions;
+        private static readonly Dictionary<string, SceneAsset>
+            SceneAssetsByName = new Dictionary<string, SceneAsset>(
+                StringComparer.Ordinal
+            );
+        private static bool sceneAssetCacheNeedsRefresh = true;
+
+        private void OnEnable()
+        {
+            EditorApplication.projectChanged += InvalidateSceneAssetCache;
+        }
+
+        private void OnDisable()
+        {
+            EditorApplication.projectChanged -= InvalidateSceneAssetCache;
+        }
 
         public override void OnInspectorGUI()
         {
@@ -398,6 +413,24 @@ namespace LudusSDK.Editor
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField(
+                "Resultados informados pelo jogo",
+                EditorStyles.boldLabel
+            );
+            EditorGUILayout.HelpBox(
+                "Habilite somente os resultados realmente conectados pela Ponte semântica, pelos adaptadores ou pela API C#. O SDK não deduz sozinho o que é acerto, erro, fase ou categoria.",
+                MessageType.Info
+            );
+            DrawCapability(capabilities, "categoryEvents", "Categorias");
+            DrawCapability(capabilities, "phaseEvents", "Eventos de fase");
+            DrawCapability(capabilities, "correctWrong", "Acertos e erros");
+            DrawCapability(
+                capabilities,
+                "customEvents",
+                "Eventos personalizados"
+            );
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField(
                 "Capturas visuais",
                 EditorStyles.boldLabel
             );
@@ -412,7 +445,7 @@ namespace LudusSDK.Editor
                 EditorGUI.indentLevel++;
                 DrawProperty(
                     "captureScreenshotOnContextStart",
-                    "Capturar ao iniciar cada recorte"
+                    "Capturar após a primeira interação"
                 );
                 EditorGUI.indentLevel--;
 
@@ -842,22 +875,50 @@ namespace LudusSDK.Editor
 
         private static SceneAsset FindSceneAsset(string sceneName)
         {
-            foreach (string guid in AssetDatabase.FindAssets(sceneName + " t:Scene"))
+            RefreshSceneAssetCacheIfNeeded();
+            return SceneAssetsByName.TryGetValue(
+                sceneName,
+                out SceneAsset sceneAsset
+            )
+                ? sceneAsset
+                : null;
+        }
+
+        private static void InvalidateSceneAssetCache()
+        {
+            sceneAssetCacheNeedsRefresh = true;
+        }
+
+        private static void RefreshSceneAssetCacheIfNeeded()
+        {
+            if (!sceneAssetCacheNeedsRefresh)
+            {
+                return;
+            }
+
+            SceneAssetsByName.Clear();
+
+            foreach (string guid in AssetDatabase.FindAssets("t:Scene"))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
-                if (
-                    string.Equals(
-                        System.IO.Path.GetFileNameWithoutExtension(path),
-                        sceneName,
-                        StringComparison.Ordinal
-                    )
-                )
+                SceneAsset sceneAsset =
+                    AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
+
+                if (sceneAsset == null)
                 {
-                    return AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
+                    continue;
+                }
+
+                string sceneName =
+                    System.IO.Path.GetFileNameWithoutExtension(path);
+
+                if (!SceneAssetsByName.ContainsKey(sceneName))
+                {
+                    SceneAssetsByName.Add(sceneName, sceneAsset);
                 }
             }
 
-            return null;
+            sceneAssetCacheNeedsRefresh = false;
         }
 
         private static bool IsSceneInEnabledBuildProfile(string sceneName)

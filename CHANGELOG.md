@@ -4,6 +4,82 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 
 ## [Não publicado]
 
+### Adicionado
+
+- Componente visual `LudusSemanticBridge` para conectar `UnityEvent` já
+  existente no jogo a categorias, fases, tentativas de arraste, acertos e
+  erros sem escrever uma chamada C# para cada evento.
+- Cronômetro e contadores locais por fase na ponte visual, usados ao registrar
+  `PhaseCompleted` sem inferir o resultado a partir da interação observada.
+- Inspector orientado em português e testes EditMode do fluxo semântico
+  completo e do estado desabilitado.
+- Primeiro adaptador sem código para áreas de drop da UI: compara a tag da
+  peça recebida pelo `EventSystem`, registra tentativa e encaminha acerto ou
+  erro sem interferir na movimentação implementada pelo jogo.
+- Validação legível de tag inexistente e testes para resultado correto e
+  incorreto com nomes descobertos em tempo de execução.
+- Adaptador de contato por tag para triggers e colisões 2D/3D, com busca
+  opcional da tag nos objetos pais sem interferir em colliders ou movimento.
+- Adaptador de alternativas de UI que escuta `Button.onClick`, preserva os
+  listeners do jogo e encaminha o resultado configurado no Inspector.
+- Adaptador de meta por valor ou pontuação com comparação configurável,
+  bloqueio de duplicação e ações de acerto e/ou conclusão de fase.
+- Janela **LUDUS > Validar integração semântica** para localizar base ou
+  configuração ausente, múltiplos controladores e capacidades incompatíveis
+  com os adaptadores presentes na cena.
+- Seção **Resultados informados pelo jogo** no Inspector da configuração para
+  habilitar categorias, fases, acertos/erros e eventos personalizados sem
+  recorrer ao modo de depuração do Inspector.
+- Testes EditMode das regras estruturais do validador sem modificar cenas do
+  jogo consumidor.
+- Componente visual `LudusSessionScope` para iniciar e encerrar uma sessão por
+  atividade, cena ou painel, mantendo vários Canvas internos na mesma coleta e
+  encerrando somente a sessão que ele próprio iniciou.
+- Eventos opcionais do escopo para ligar categoria e fase à Ponte semântica,
+  além de métodos públicos para fluxos que não coincidem com a troca de cena.
+- Cache das cenas exibidas no Inspector, evitando buscas no `AssetDatabase` a
+  cada repaint quando a seleção de capturas visuais está aberta.
+- Assistente **LUDUS > Configurar resultados da cena** para localizar destinos
+  de drop com tags explícitas, pedir confirmação e configurar tentativa,
+  acerto, erro, categoria e fase sem alterar os scripts do jogo.
+- Ponte semântica compartilhada entre os destinos configurados pelo
+  assistente, permitindo agregar os resultados da atividade em uma única
+  conclusão de fase.
+- Resolução automática dos nomes semânticos de arraste pelo texto, imagem ou
+  sprite visível no momento da tentativa, mantendo a tag apenas como regra
+  técnica de comparação.
+- Registro das alternativas visíveis e da resposta esperada em cada tentativa
+  de arraste, para que o Dashboard apresente o contexto real da atividade.
+- Preparação automática de cada Canvas confirmado como área de observação,
+  sem exigir que a pessoa desenvolvedora crie esses componentes manualmente.
+- Criação automática e idempotente da Sessão acompanhada pelo assistente de
+  resultados, com nome da atividade informado na janela e bloqueio de cenas
+  ambíguas que possuam múltiplos escopos.
+- Navegação guiada pelas cenas habilitadas no Build Profile, preservando o
+  diálogo de salvamento do Unity e renovando a sugestão de categoria em cada
+  cena sem configurar telas automaticamente.
+- Ação **Aplicar e abrir próxima** no assistente semântico, mantendo a
+  confirmação individual de nomes e destinos antes de avançar no Build Profile.
+
+### Mantido
+
+- A decisão de acerto ou erro continua pertencendo ao jogo. A ponte apenas
+  encaminha ao contrato LUDUS um fato explicitamente ligado pelo integrador.
+- Valores internos, mudanças de cena e regras não expostas pelo jogo não são
+  inspecionados ou classificados automaticamente.
+
+### Corrigido
+
+- O escopo de sessão reutiliza a mesma base LUDUS que iniciou a coleta ao
+  encerrar uma atividade, evitando falhas de redescoberta durante a troca de
+  cenas.
+- A ponte semântica conserva o controlador usado no início da fase para
+  registrar `PhaseCompleted` durante a desativação da cena, antes da
+  serialização final da sessão.
+- A captura visual automática passa a ocorrer depois da primeira interação
+  relevante de cada recorte, evitando usar telas intermediárias de
+  carregamento como fundo do mapa.
+
 ## [0.1.4] - 2026-10-01
 
 ### Adicionado

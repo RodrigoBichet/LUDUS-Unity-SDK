@@ -26,6 +26,9 @@ namespace LudusSDK
         private readonly HashSet<string> automaticScreenshotContexts =
             new HashSet<string>();
 
+        private readonly HashSet<string> preparedAutomaticScreenshotContexts =
+            new HashSet<string>();
+
         private int pendingScreenshotCaptures;
 
         public bool HasActiveSession => lifecycle.HasActiveSession;
@@ -119,6 +122,7 @@ namespace LudusSDK
             if (started)
             {
                 automaticScreenshotContexts.Clear();
+                preparedAutomaticScreenshotContexts.Clear();
                 pendingScreenshotCaptures = 0;
             }
 
@@ -147,18 +151,38 @@ namespace LudusSDK
             out string errorMessage
         )
         {
+            string previousContextInstanceId =
+                lifecycle.ActiveCaptureContextInstanceId;
             bool started = lifecycle.TryBeginCaptureContext(
                 context,
                 out errorMessage
             );
 
-            ScheduleAutomaticScreenshotIfNeeded(started, context);
+            if (!string.IsNullOrWhiteSpace(previousContextInstanceId))
+            {
+                preparedAutomaticScreenshotContexts.Remove(
+                    previousContextInstanceId
+                );
+            }
+
+            PrepareAutomaticScreenshotIfNeeded(started, context);
             return started;
         }
 
         public bool TryEndCaptureContext(out string errorMessage)
         {
-            return lifecycle.TryEndCaptureContext(out errorMessage);
+            string contextInstanceId =
+                lifecycle.ActiveCaptureContextInstanceId;
+            bool ended = lifecycle.TryEndCaptureContext(out errorMessage);
+
+            if (ended)
+            {
+                preparedAutomaticScreenshotContexts.Remove(
+                    contextInstanceId
+                );
+            }
+
+            return ended;
         }
 
         public bool TryEndCaptureContext(
@@ -166,10 +190,21 @@ namespace LudusSDK
             out string errorMessage
         )
         {
-            return lifecycle.TryEndCaptureContext(
+            string contextInstanceId =
+                lifecycle.ActiveCaptureContextInstanceId;
+            bool ended = lifecycle.TryEndCaptureContext(
                 expectedContext,
                 out errorMessage
             );
+
+            if (ended)
+            {
+                preparedAutomaticScreenshotContexts.Remove(
+                    contextInstanceId
+                );
+            }
+
+            return ended;
         }
 
         public bool TryRecordClick(
@@ -177,11 +212,14 @@ namespace LudusSDK
             out string errorMessage
         )
         {
-            return lifecycle.TryRecordClick(
+            bool recorded = lifecycle.TryRecordClick(
                 position.x,
                 position.y,
                 out errorMessage
             );
+
+            SchedulePreparedAutomaticScreenshot(recorded);
+            return recorded;
         }
 
         public bool TryRecordMousePoint(
@@ -202,12 +240,15 @@ namespace LudusSDK
             out string errorMessage
         )
         {
-            return lifecycle.TryRecordDragPoint(
+            bool recorded = lifecycle.TryRecordDragPoint(
                 position.x,
                 position.y,
                 state,
                 out errorMessage
             );
+
+            SchedulePreparedAutomaticScreenshot(recorded);
+            return recorded;
         }
 
         public bool TryRecordTrackedInteraction(
@@ -217,7 +258,7 @@ namespace LudusSDK
             out string errorMessage
         )
         {
-            return lifecycle.TryRecordTrackedInteraction(
+            bool recorded = lifecycle.TryRecordTrackedInteraction(
                 new LudusTrackedInteraction(
                     displayName,
                     interactionKind,
@@ -225,6 +266,9 @@ namespace LudusSDK
                 ),
                 out errorMessage
             );
+
+            SchedulePreparedAutomaticScreenshot(recorded);
+            return recorded;
         }
 
         public bool TryRecordTrackedInteraction(
@@ -235,7 +279,7 @@ namespace LudusSDK
             out string errorMessage
         )
         {
-            return lifecycle.TryRecordTrackedInteraction(
+            bool recorded = lifecycle.TryRecordTrackedInteraction(
                 new LudusTrackedInteraction(
                     displayName,
                     interactionKind,
@@ -244,6 +288,9 @@ namespace LudusSDK
                 ),
                 out errorMessage
             );
+
+            SchedulePreparedAutomaticScreenshot(recorded);
+            return recorded;
         }
 
         internal bool TryRecordGameEvent(
@@ -252,11 +299,28 @@ namespace LudusSDK
             out string errorMessage
         )
         {
-            return lifecycle.TryRecordGameEvent(
+            bool recorded = lifecycle.TryRecordGameEvent(
                 eventType,
                 payloadJson,
                 out errorMessage
             );
+
+            bool representsInteraction =
+                !string.Equals(
+                    eventType,
+                    "CategorySelected",
+                    StringComparison.Ordinal
+                ) &&
+                !string.Equals(
+                    eventType,
+                    "PhaseStarted",
+                    StringComparison.Ordinal
+                );
+
+            SchedulePreparedAutomaticScreenshot(
+                recorded && representsInteraction
+            );
+            return recorded;
         }
 
         public bool TryRecordTextInputCompletion(
@@ -265,7 +329,7 @@ namespace LudusSDK
             out string errorMessage
         )
         {
-            return lifecycle.TryRecordTrackedInteraction(
+            bool recorded = lifecycle.TryRecordTrackedInteraction(
                 new LudusTrackedInteraction(
                     displayName,
                     "text-input",
@@ -274,6 +338,9 @@ namespace LudusSDK
                 ),
                 out errorMessage
             );
+
+            SchedulePreparedAutomaticScreenshot(recorded);
+            return recorded;
         }
 
         public bool TryRecordTextInputCompletion(
@@ -283,7 +350,7 @@ namespace LudusSDK
             out string errorMessage
         )
         {
-            return lifecycle.TryRecordTrackedInteraction(
+            bool recorded = lifecycle.TryRecordTrackedInteraction(
                 new LudusTrackedInteraction(
                     displayName,
                     "text-input",
@@ -293,6 +360,9 @@ namespace LudusSDK
                 ),
                 out errorMessage
             );
+
+            SchedulePreparedAutomaticScreenshot(recorded);
+            return recorded;
         }
 
         public bool TryRecordTrackedDrag(
@@ -303,7 +373,7 @@ namespace LudusSDK
             out string errorMessage
         )
         {
-            return lifecycle.TryRecordTrackedInteraction(
+            bool recorded = lifecycle.TryRecordTrackedInteraction(
                 new LudusTrackedInteraction(
                     displayName,
                     startPosition,
@@ -312,6 +382,9 @@ namespace LudusSDK
                 ),
                 out errorMessage
             );
+
+            SchedulePreparedAutomaticScreenshot(recorded);
+            return recorded;
         }
 
         public bool TryCaptureScreenshot(out string errorMessage)
@@ -356,7 +429,7 @@ namespace LudusSDK
             return serialized;
         }
 
-        private void ScheduleAutomaticScreenshotIfNeeded(
+        private void PrepareAutomaticScreenshotIfNeeded(
             bool contextStarted,
             LudusCaptureContext context
         )
@@ -388,15 +461,46 @@ namespace LudusSDK
                 return;
             }
 
+            preparedAutomaticScreenshotContexts.Add(contextInstanceId);
+        }
+
+        private void SchedulePreparedAutomaticScreenshot(
+            bool meaningfulActivityRecorded
+        )
+        {
+            if (!meaningfulActivityRecorded)
+            {
+                return;
+            }
+
+            string contextInstanceId =
+                lifecycle.ActiveCaptureContextInstanceId;
+
+            if (
+                string.IsNullOrWhiteSpace(contextInstanceId) ||
+                !preparedAutomaticScreenshotContexts.Contains(
+                    contextInstanceId
+                ) ||
+                automaticScreenshotContexts.Contains(contextInstanceId)
+            )
+            {
+                return;
+            }
+
             if (TryScheduleScreenshotCapture(
                 contextInstanceId,
                 true,
                 out string errorMessage
             ))
             {
+                preparedAutomaticScreenshotContexts.Remove(
+                    contextInstanceId
+                );
                 automaticScreenshotContexts.Add(contextInstanceId);
+                return;
             }
-            else if (config.debugMode)
+
+            if (config != null && config.debugMode)
             {
                 Debug.LogWarning(
                     "[LUDUS] Captura visual automática não iniciada: " +

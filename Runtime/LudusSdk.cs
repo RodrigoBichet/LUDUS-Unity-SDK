@@ -202,18 +202,39 @@ namespace LudusSDK
             out string errorMessage
         )
         {
+            return TryStartSessionForManualImport(
+                sessionDisplayName,
+                out _,
+                out errorMessage
+            );
+        }
+
+        internal static bool TryStartSessionForManualImport(
+            string sessionDisplayName,
+            out LudusSessionController controller,
+            out string errorMessage
+        )
+        {
             string resolvedDisplayName = string.IsNullOrWhiteSpace(sessionDisplayName)
                 ? "Sessão sem vínculo"
                 : sessionDisplayName.Trim();
 
-            return TryStartSession(
+            if (!TryGetSingleSessionController(
+                out controller,
+                out errorMessage
+            ))
+            {
+                return false;
+            }
+
+            return controller.TryStartSession(
                 StudentIdPendingManualImport,
                 resolvedDisplayName,
                 out errorMessage
             );
         }
 
-        private static bool TryGetSingleSessionController(
+        internal static bool TryGetSingleSessionController(
             out LudusSessionController controller,
             out string errorMessage
         )
