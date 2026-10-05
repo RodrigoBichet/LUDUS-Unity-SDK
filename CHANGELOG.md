@@ -6,6 +6,22 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 
 ### Adicionado
 
+- Modos de entrega mutuamente exclusivos para envio automático ao Dashboard,
+  exportação manual e desenvolvimento com os dois destinos.
+- Contrato `1.1.0` com `runId`, `attemptNumber` e `status`, preservando cada
+  categoria ou repetição como uma sessão própria dentro da mesma execução.
+- Checkpoints periódicos leves no envio automático, protegidos por chave
+  efêmera, para reduzir a perda de progresso quando uma aba WebGL é fechada.
+- Resolução genérica da identidade do participante pelos parâmetros WebGL
+  `ludusStudentId` e `ludusPlayerId`, com alternativa pela API pública
+  `LudusSdk.TrySetParticipant` e bloqueio legível do envio automático sem
+  vínculo de aluno.
+- Intervalo técnico dos checkpoints mantido internamente, sem exigir essa
+  decisão do desenvolvedor no fluxo principal do Inspector.
+- Pacote `ludus-session-bundle` com sessões concluídas e fotografia opcional
+  da sessão atual, além do componente `LudusRunExportButton` para um botão
+  posicionado pelo desenvolvedor dentro do Canvas.
+
 - Componente visual `LudusSemanticBridge` para conectar `UnityEvent` já
   existente no jogo a categorias, fases, tentativas de arraste, acertos e
   erros sem escrever uma chamada C# para cada evento.

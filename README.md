@@ -407,6 +407,23 @@ Para envio automático à API, use `TryStartSession(studentId, playerId, ...)`
 somente quando o jogo já receber uma identidade técnica por um fluxo seguro
 externo. JWTs de usuário não pertencem ao build Unity.
 
+Os componentes de **Sessão acompanhada** também resolvem essa identidade de
+forma genérica quando o WebGL é aberto com os parâmetros
+`ludusStudentId` e `ludusPlayerId`. Isso permite que um Dashboard, portal ou
+ambiente de teste inicie jogos diferentes sem gravar o aluno em cenas ou
+prefabs. Exemplo fictício:
+
+```text
+https://jogo.exemplo/?ludusStudentId=000000000000000000000123&ludusPlayerId=Aluno%20Fict%C3%ADcio
+```
+
+Se o próprio jogo já possui identificação, ele pode informar a mesma
+identidade em tempo de execução com
+`LudusSdk.TrySetParticipant(studentId, playerId, out erro)`. No modo automático,
+uma sessão sem participante identificado é bloqueada com uma mensagem clara,
+em vez de enviar dados sem vínculo ao Dashboard. No modo manual, o fluxo de
+importação posterior continua disponível.
+
 ### 4. Recortes extras por Canvas ou painel (opcional)
 
 A captura por cena cobre o caso comum. Quando uma mesma cena possui vários
@@ -433,7 +450,15 @@ Em **Conexão com ambiente LUDUS (avançado)**, informe a URL somente quando ela
 for fornecida pelo ambiente oficial LUDUS ou por um backend local controlado.
 Use apenas a origem, sem `/api` no final.
 
-- **Enviar sessões para LUDUS Acompanha** envia ao encerrar, quando existe URL.
+- **Enviar automaticamente ao LUDUS Acompanha** é o modo recomendado para
+  turmas. Cada categoria é enviada ao encerrar e o SDK mantém checkpoints
+  parciais leves durante a atividade, sem baixar JSON nos computadores dos
+  jogadores. A proteção parcial funciona em segundo plano; o integrador não
+  precisa escolher seu intervalo.
+- **Exportar JSON manualmente** não envia à plataforma e baixa cada sessão no
+  WebGL. Um botão opcional pode exportar toda a execução acumulada.
+- **Desenvolvimento: enviar e também baixar** mantém os dois comportamentos
+  apenas para validação técnica.
 - **Salvar também uma cópia local** mantém um arquivo local mesmo se o envio
   funcionar.
 - **Baixar arquivo JSON ao encerrar (WebGL)** solicita um download normal no
@@ -454,6 +479,25 @@ No WebGL, o fallback aparece em um caminho semelhante a:
 ```
 
 Esse caminho representa o armazenamento local do navegador.
+
+O schema `1.1.0` separa três conceitos:
+
+- `sessionId`: uma categoria ou tentativa individual;
+- `runId`: a execução contínua do jogo, reunindo várias sessões;
+- `attemptNumber`: a ordem das tentativas, inclusive repetições;
+- `status`: `in_progress`, `completed` ou `interrupted`.
+
+Para oferecer um botão pequeno dentro do próprio jogo, crie um `Button` no
+Canvas, posicione-o como preferir e adicione o componente **LUDUS > Fluxo >
+Botão para exportar execução**. O arquivo gerado usa o formato
+`ludus-session-bundle` e inclui tudo que já foi concluído, mais uma fotografia
+da sessão atual sem encerrá-la. Por padrão o botão se oculta no modo de envio
+automático, pois o professor pode baixar a execução pelo Dashboard.
+
+Fechar ou voltar a aba não garante a execução de código JavaScript. Por isso,
+o SDK não depende de um download nesse instante: no modo automático ele envia
+checkpoints periódicos. Esses registros são evidências parciais e não devem
+ser interpretados como conclusão da atividade.
 
 Para importar manualmente uma sessão WebGL, marque a opção de baixar JSON,
 encerre a sessão e use o arquivo `ludus-<jogo>-<data-hora>.json` em:

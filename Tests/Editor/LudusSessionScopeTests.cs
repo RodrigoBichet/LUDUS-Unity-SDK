@@ -6,6 +6,12 @@ namespace LudusSDK.Tests
 {
     public sealed class LudusSessionScopeTests
     {
+        [TearDown]
+        public void TearDown()
+        {
+            LudusSdk.ClearParticipant();
+        }
+
         [Test]
         public void Escopo_IniciaInvocaEventosEEncerraSessaoPropria()
         {
@@ -164,6 +170,106 @@ namespace LudusSDK.Tests
                 Is.True,
                 cleanupError
             );
+
+            DestroyObjects(scopeObject, baseObject, config);
+        }
+
+        [Test]
+        public void Escopo_ComParticipanteConfigurado_UsaVinculoAutomatico()
+        {
+            LudusSdkConfig config = CreateConfig();
+            GameObject baseObject = CreateBase(config);
+            GameObject scopeObject = new GameObject("Categoria Alimentos");
+            LudusSessionScope scope =
+                scopeObject.AddComponent<LudusSessionScope>();
+            scope.Configure("Alimentos", false, false);
+
+            Assert.That(
+                LudusSdk.TrySetParticipant(
+                    "000000000000000000000123",
+                    "Aluno Fictício Local",
+                    out string identityError
+                ),
+                Is.True,
+                identityError
+            );
+            Assert.That(
+                scope.TryStartOwnedSession(out string startError),
+                Is.True,
+                startError
+            );
+            Assert.That(
+                scope.TryEndOwnedSession(out string json, out string endError),
+                Is.True,
+                endError
+            );
+            Assert.That(
+                json,
+                Does.Contain(
+                    "\"studentId\":\"000000000000000000000123\""
+                )
+            );
+            Assert.That(
+                json,
+                Does.Contain("\"playerId\":\"Aluno Fictício Local\"")
+            );
+
+            DestroyObjects(scopeObject, baseObject, config);
+        }
+
+        [Test]
+        public void ContextoDeParticipante_ResolveUrlWebGlCodificada()
+        {
+            bool resolved = LudusParticipantContext.TryResolveFromUrl(
+                "http://localhost:5173/?ludusStudentId=" +
+                    "000000000000000000000456&ludusPlayerId=" +
+                    "Aluno%20Fict%C3%ADcio%20Teste",
+                out LudusParticipant participant,
+                out string errorMessage
+            );
+
+            Assert.That(resolved, Is.True, errorMessage);
+            Assert.That(
+                participant.studentId,
+                Is.EqualTo("000000000000000000000456")
+            );
+            Assert.That(
+                participant.playerId,
+                Is.EqualTo("Aluno Fictício Teste")
+            );
+        }
+
+        [Test]
+        public void ContextoDeParticipante_RejeitaUrlIncompleta()
+        {
+            bool resolved = LudusParticipantContext.TryResolveFromUrl(
+                "http://localhost:5173/?ludusStudentId=" +
+                    "000000000000000000000456",
+                out _,
+                out string errorMessage
+            );
+
+            Assert.That(resolved, Is.False);
+            Assert.That(errorMessage, Does.Contain("incompleta"));
+        }
+
+        [Test]
+        public void Escopo_AutomaticoSemParticipante_ExplicaComoIdentificar()
+        {
+            LudusSdkConfig config = CreateConfig();
+            config.sendOnSessionEnd = true;
+            GameObject baseObject = CreateBase(config);
+            GameObject scopeObject = new GameObject("Categoria sem aluno");
+            LudusSessionScope scope =
+                scopeObject.AddComponent<LudusSessionScope>();
+            scope.Configure("Categoria", false, false);
+
+            Assert.That(
+                scope.TryStartOwnedSession(out string errorMessage),
+                Is.False
+            );
+            Assert.That(errorMessage, Does.Contain("participante identificado"));
+            Assert.That(errorMessage, Does.Contain("ludusStudentId"));
 
             DestroyObjects(scopeObject, baseObject, config);
         }

@@ -15,6 +15,9 @@ namespace LudusSDK
 
         public LudusCapabilities capabilities;
         public string sessionId;
+        public string runId;
+        public int attemptNumber;
+        public string status = "in_progress";
         public string studentId;
         public string playerId;
         public string gameId;
@@ -72,6 +75,9 @@ namespace LudusSDK
             {
                 capabilities = config.capabilities.Clone(),
                 sessionId = Guid.NewGuid().ToString("N"),
+                runId = LudusRunContext.CurrentRunId,
+                attemptNumber = LudusRunContext.NextAttemptNumber(),
+                status = "in_progress",
                 studentId = participant.studentId,
                 playerId = participant.playerId,
                 gameId = config.GetResolvedGameId(),
@@ -86,6 +92,18 @@ namespace LudusSDK
         {
             durationMs = Math.Max(0, sessionDurationMs);
             endedAt = DateTimeOffset.UtcNow.ToString("O");
+            status = "completed";
+        }
+
+        internal LudusSession CreateSnapshot(int sessionDurationMs)
+        {
+            LudusSession snapshot = JsonUtility.FromJson<LudusSession>(
+                JsonUtility.ToJson(this)
+            );
+            snapshot.durationMs = Math.Max(0, sessionDurationMs);
+            snapshot.endedAt = string.Empty;
+            snapshot.status = "in_progress";
+            return snapshot;
         }
     }
 }

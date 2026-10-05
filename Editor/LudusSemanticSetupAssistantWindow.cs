@@ -578,16 +578,34 @@ namespace LudusSDK.Editor
         private void OnEnable()
         {
             EditorApplication.hierarchyChanged += HandleHierarchyChanged;
+            EditorSceneManager.sceneOpened += HandleSceneOpened;
             RefreshCandidates();
         }
 
         private void OnDisable()
         {
             EditorApplication.hierarchyChanged -= HandleHierarchyChanged;
+            EditorSceneManager.sceneOpened -= HandleSceneOpened;
+            EditorApplication.delayCall -= RefreshAfterSceneOpened;
         }
 
         private void HandleHierarchyChanged()
         {
+            RefreshCandidates();
+            Repaint();
+        }
+
+        private void HandleSceneOpened(Scene scene, OpenSceneMode mode)
+        {
+            activityDisplayName = string.Empty;
+            observedSceneIdentity = string.Empty;
+            EditorApplication.delayCall -= RefreshAfterSceneOpened;
+            EditorApplication.delayCall += RefreshAfterSceneOpened;
+        }
+
+        private void RefreshAfterSceneOpened()
+        {
+            EditorApplication.delayCall -= RefreshAfterSceneOpened;
             RefreshCandidates();
             Repaint();
         }
@@ -847,8 +865,6 @@ namespace LudusSDK.Editor
                 );
                 statusMessage = string.Empty;
                 statusType = MessageType.None;
-                RefreshCandidates();
-                Repaint();
             }
             catch (Exception exception)
             {

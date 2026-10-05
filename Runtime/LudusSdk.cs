@@ -13,8 +13,23 @@ namespace LudusSDK
             out string errorMessage
         )
         {
+            return TryStartSession(
+                studentId,
+                playerId,
+                out _,
+                out errorMessage
+            );
+        }
+
+        internal static bool TryStartSession(
+            string studentId,
+            string playerId,
+            out LudusSessionController controller,
+            out string errorMessage
+        )
+        {
             if (!TryGetSingleSessionController(
-                out LudusSessionController controller,
+                out controller,
                 out errorMessage
             ))
             {
@@ -26,6 +41,24 @@ namespace LudusSDK
                 playerId,
                 out errorMessage
             );
+        }
+
+        public static bool TrySetParticipant(
+            string studentId,
+            string playerId,
+            out string errorMessage
+        )
+        {
+            return LudusParticipantContext.TryConfigure(
+                studentId,
+                playerId,
+                out errorMessage
+            );
+        }
+
+        public static void ClearParticipant()
+        {
+            LudusParticipantContext.Clear();
         }
 
         public static bool TryEndSession(
@@ -44,6 +77,77 @@ namespace LudusSDK
             }
 
             return controller.TryEndAndSerialize(out json, out errorMessage);
+        }
+
+        public static string BeginNewRun()
+        {
+            return LudusRunContext.BeginNewRun();
+        }
+
+        public static bool TryCreateCurrentRunBundle(
+            out string bundleJson,
+            out string errorMessage
+        )
+        {
+            bundleJson = string.Empty;
+            string activeSessionId = string.Empty;
+            string activeSessionJson = string.Empty;
+
+            if (
+                TryGetSingleSessionController(
+                    out LudusSessionController controller,
+                    out _
+                ) &&
+                controller.HasActiveSession
+            )
+            {
+                if (
+                    !controller.TrySerializeSnapshot(
+                        out LudusSession snapshot,
+                        out activeSessionJson,
+                        out errorMessage
+                    )
+                )
+                {
+                    return false;
+                }
+
+                activeSessionId = snapshot.sessionId;
+            }
+
+            return LudusRunArchive.TryCreateBundle(
+                activeSessionId,
+                activeSessionJson,
+                out bundleJson,
+                out errorMessage
+            );
+        }
+
+        public static bool TryDownloadCurrentRun(out string errorMessage)
+        {
+            if (
+                !TryGetSingleSessionController(
+                    out LudusSessionController controller,
+                    out errorMessage
+                ) ||
+                controller.Config == null
+            )
+            {
+                return false;
+            }
+
+            if (!TryCreateCurrentRunBundle(out string json, out errorMessage))
+            {
+                return false;
+            }
+
+            return LudusWebGlJsonDownload.TryDownload(
+                LudusWebGlJsonDownload.CreateRunBundleFileName(
+                    controller.Config
+                ),
+                json,
+                out errorMessage
+            );
         }
 
         public static bool TryRecordTrackedInteraction(

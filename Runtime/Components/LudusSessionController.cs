@@ -429,6 +429,25 @@ namespace LudusSDK
             return serialized;
         }
 
+        public bool TrySerializeSnapshot(
+            out LudusSession snapshot,
+            out string json,
+            out string errorMessage
+        )
+        {
+            json = string.Empty;
+            if (!lifecycle.TryCreateSnapshot(out snapshot, out errorMessage))
+            {
+                return false;
+            }
+
+            return LudusJsonSerializer.TrySerialize(
+                snapshot,
+                out json,
+                out errorMessage
+            );
+        }
+
         private void PrepareAutomaticScreenshotIfNeeded(
             bool contextStarted,
             LudusCaptureContext context

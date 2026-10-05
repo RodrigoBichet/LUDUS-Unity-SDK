@@ -6,6 +6,18 @@ using UnityEngine;
 
 namespace LudusSDK
 {
+    public enum LudusDeliveryMode
+    {
+        [InspectorName("Enviar automaticamente ao LUDUS Acompanha")]
+        AutomaticDashboard,
+
+        [InspectorName("Exportar JSON manualmente")]
+        ManualJson,
+
+        [InspectorName("Desenvolvimento: enviar e também baixar")]
+        DevelopmentBoth,
+    }
+
     public enum LudusSceneCaptureMode
     {
         [InspectorName("Todas as cenas")]
@@ -55,6 +67,15 @@ namespace LudusSDK
         [Tooltip("Mantém uma cópia local mesmo quando o envio for bem-sucedido.")]
         public bool saveLocalCopyOnSessionEnd;
 
+        [InspectorName("Salvar progresso parcial durante a atividade")]
+        [Tooltip("No envio automático, atualiza uma fotografia parcial da sessão para reduzir perdas quando a aba é fechada antes da conclusão.")]
+        public bool enableAutomaticCheckpoints = true;
+
+        [InspectorName("Intervalo do progresso parcial (segundos)")]
+        [Tooltip("Intervalo entre fotografias parciais. Valores menores aumentam o tráfego de rede.")]
+        [Range(5f, 300f)]
+        public float checkpointIntervalSeconds = 15f;
+
         [Header("Importação manual")]
 
         [InspectorName("Baixar arquivo JSON ao encerrar (WebGL)")]
@@ -64,6 +85,43 @@ namespace LudusSDK
         [InspectorName("Rótulo do arquivo (opcional)")]
         [Tooltip("Texto curto para identificar o JSON baixado, como 'atividade-1'. Se ficar vazio, o SDK usa somente o nome do jogo e a data de encerramento.")]
         public string downloadFileLabel = "";
+
+        public LudusDeliveryMode GetDeliveryMode()
+        {
+            if (sendOnSessionEnd && downloadJsonOnSessionEnd)
+            {
+                return LudusDeliveryMode.DevelopmentBoth;
+            }
+
+            return sendOnSessionEnd
+                ? LudusDeliveryMode.AutomaticDashboard
+                : LudusDeliveryMode.ManualJson;
+        }
+
+        public void ApplyDeliveryMode(LudusDeliveryMode deliveryMode)
+        {
+            switch (deliveryMode)
+            {
+                case LudusDeliveryMode.AutomaticDashboard:
+                    sendOnSessionEnd = true;
+                    downloadJsonOnSessionEnd = false;
+                    break;
+                case LudusDeliveryMode.ManualJson:
+                    sendOnSessionEnd = false;
+                    downloadJsonOnSessionEnd = true;
+                    break;
+                case LudusDeliveryMode.DevelopmentBoth:
+                    sendOnSessionEnd = true;
+                    downloadJsonOnSessionEnd = true;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(deliveryMode),
+                        deliveryMode,
+                        "Modo de entrega LUDUS desconhecido."
+                    );
+            }
+        }
 
         [Header("Fallback offline")]
 

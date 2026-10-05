@@ -45,9 +45,24 @@ namespace LudusSDK.Tests
             Object.DestroyImmediate(config);
 
             Assert.That(serialized, Is.True, errorMessage);
-            Assert.That(json, Does.Contain("\"schemaVersion\":\"1.0.0\""));
+            Assert.That(
+                json,
+                Does.Contain(
+                    "\"schemaVersion\":\"" +
+                    LudusSdkInfo.SchemaVersion +
+                    "\""
+                )
+            );
             Assert.That(json, Does.Contain("\"captureMode\":\"sdk\""));
-            Assert.That(json, Does.Contain("\"sourceVersion\":\"0.1.4\""));
+            Assert.That(
+                json,
+                Does.Contain(
+                    "\"sourceVersion\":\"" +
+                    LudusSdkInfo.SourceVersion +
+                    "\""
+                )
+            );
+            Assert.That(json, Does.Contain("\"status\":\"completed\""));
             Assert.That(
                 json,
                 Does.Contain(
@@ -1411,6 +1426,39 @@ public void SessionLifecycle_ComContextoAtivo_RegistraTrajetoriaDeArraste()
 
             Object.DestroyImmediate(contextHost);
             Object.DestroyImmediate(controllerHost);
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void Configuracao_AplicaModosDeEntregaSemCombinarOpcoesPorEngano()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+            config.ApplyDeliveryMode(LudusDeliveryMode.AutomaticDashboard);
+            Assert.That(config.sendOnSessionEnd, Is.True);
+            Assert.That(config.downloadJsonOnSessionEnd, Is.False);
+            Assert.That(
+                config.GetDeliveryMode(),
+                Is.EqualTo(LudusDeliveryMode.AutomaticDashboard)
+            );
+
+            config.ApplyDeliveryMode(LudusDeliveryMode.ManualJson);
+            Assert.That(config.sendOnSessionEnd, Is.False);
+            Assert.That(config.downloadJsonOnSessionEnd, Is.True);
+            Assert.That(
+                config.GetDeliveryMode(),
+                Is.EqualTo(LudusDeliveryMode.ManualJson)
+            );
+
+            config.ApplyDeliveryMode(LudusDeliveryMode.DevelopmentBoth);
+            Assert.That(config.sendOnSessionEnd, Is.True);
+            Assert.That(config.downloadJsonOnSessionEnd, Is.True);
+            Assert.That(
+                config.GetDeliveryMode(),
+                Is.EqualTo(LudusDeliveryMode.DevelopmentBoth)
+            );
+
             Object.DestroyImmediate(config);
         }
     }

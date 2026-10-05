@@ -361,19 +361,31 @@ namespace LudusSDK.Editor
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Envio e cópia local", EditorStyles.boldLabel);
-            DrawProperty("sendOnSessionEnd", "Enviar sessões para LUDUS Acompanha");
+            DrawDeliveryMode();
             DrawProperty(
                 "saveLocalCopyOnSessionEnd",
                 "Guardar também uma cópia de segurança local"
             );
-            DrawProperty(
-                "downloadJsonOnSessionEnd",
-                "Baixar arquivo JSON ao encerrar (WebGL)"
-            );
-            DrawProperty(
-                "downloadFileLabel",
-                "Rótulo do arquivo (opcional)"
-            );
+            LudusDeliveryMode deliveryMode =
+                ((LudusSdkConfig)target).GetDeliveryMode();
+            if (deliveryMode != LudusDeliveryMode.ManualJson)
+            {
+                DrawProperty(
+                    "enableAutomaticCheckpoints",
+                    "Salvar progresso parcial durante a atividade"
+                );
+                EditorGUILayout.HelpBox(
+                    "Quando habilitado, o SDK protege o andamento automaticamente em segundo plano. O desenvolvedor não precisa configurar o intervalo.",
+                    MessageType.Info
+                );
+            }
+            if (deliveryMode != LudusDeliveryMode.AutomaticDashboard)
+            {
+                DrawProperty(
+                    "downloadFileLabel",
+                    "Rótulo do arquivo (opcional)"
+                );
+            }
             DrawDeliveryStatus();
 
             EditorGUILayout.Space();
@@ -1062,6 +1074,32 @@ namespace LudusSDK.Editor
                     MessageType.Info
                 );
             }
+        }
+
+        private void DrawDeliveryMode()
+        {
+            LudusSdkConfig config = (LudusSdkConfig)target;
+            LudusDeliveryMode currentMode = config.GetDeliveryMode();
+
+            EditorGUI.BeginChangeCheck();
+            LudusDeliveryMode selectedMode =
+                (LudusDeliveryMode)EditorGUILayout.EnumPopup(
+                    new GUIContent(
+                        "Destino dos dados",
+                        "Escolha um fluxo principal. O modo recomendado para turmas envia as sessões sem baixar arquivos nos computadores dos jogadores."
+                    ),
+                    currentMode
+                );
+
+            if (!EditorGUI.EndChangeCheck())
+            {
+                return;
+            }
+
+            Undo.RecordObject(config, "Alterar destino dos dados LUDUS");
+            config.ApplyDeliveryMode(selectedMode);
+            EditorUtility.SetDirty(config);
+            serializedObject.Update();
         }
     }
 

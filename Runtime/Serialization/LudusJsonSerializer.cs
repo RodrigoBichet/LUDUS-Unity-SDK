@@ -35,6 +35,9 @@ WriteCapabilities(builder, session.capabilities);
 builder.Append(',');
 
 WriteProperty(builder, "sessionId", session.sessionId, true);
+WriteProperty(builder, "runId", session.runId, true);
+WriteProperty(builder, "attemptNumber", session.attemptNumber, true);
+WriteProperty(builder, "status", session.status, true);
 WriteProperty(builder, "studentId", session.studentId, true);
 WriteProperty(builder, "playerId", session.playerId, true);
 WriteProperty(builder, "gameId", session.gameId, true);
@@ -109,6 +112,10 @@ builder.Append('}');
             if (
                 string.IsNullOrWhiteSpace(session.sessionId) ||
                 session.sessionId.Length > 128 ||
+                string.IsNullOrWhiteSpace(session.runId) ||
+                session.runId.Length > 128 ||
+                session.attemptNumber < 1 ||
+                !HasValidStatus(session.status) ||
                 !HasMongoObjectId(session.studentId) ||
                 string.IsNullOrWhiteSpace(session.playerId) ||
                 session.playerId.Length > 200 ||
@@ -129,6 +136,20 @@ builder.Append('}');
             if (session.durationMs < 0)
             {
                 errorMessage = "durationMs não pode ser negativo.";
+                return false;
+            }
+
+            if (
+                string.Equals(
+                    session.status,
+                    "completed",
+                    StringComparison.Ordinal
+                ) &&
+                string.IsNullOrWhiteSpace(session.endedAt)
+            )
+            {
+                errorMessage =
+                    "Sessões concluídas precisam informar endedAt.";
                 return false;
             }
 
@@ -242,6 +263,13 @@ builder.Append('}');
 
             errorMessage = string.Empty;
             return true;
+        }
+
+        private static bool HasValidStatus(string status)
+        {
+            return status == "in_progress" ||
+                status == "completed" ||
+                status == "interrupted";
         }
 
         private static bool TryValidateMousePath(

@@ -1,4 +1,5 @@
 using System.Collections;
+using System;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -13,15 +14,70 @@ namespace LudusSDK
         public LudusSessionController sessionController;
 
         private LudusSessionController subscribedController;
+        private bool checkpointRequestInProgress;
+        private float nextCheckpointAt;
+        private string checkpointSessionId = string.Empty;
+        private string checkpointKey = string.Empty;
 
         private void OnEnable()
         {
             Subscribe();
+            nextCheckpointAt = Time.unscaledTime + 1f;
         }
 
         private void OnDisable()
         {
             Unsubscribe();
+        }
+
+        private void Update()
+        {
+            if (
+                checkpointRequestInProgress ||
+                sessionController == null ||
+                sessionController.Config == null ||
+                !sessionController.Config.sendOnSessionEnd ||
+                !sessionController.Config.enableAutomaticCheckpoints ||
+                !sessionController.HasActiveSession ||
+                Time.unscaledTime < nextCheckpointAt
+            )
+            {
+                return;
+            }
+
+            nextCheckpointAt = Time.unscaledTime + Mathf.Max(
+                5f,
+                sessionController.Config.checkpointIntervalSeconds
+            );
+
+            if (
+                !sessionController.TrySerializeSnapshot(
+                    out LudusSession snapshot,
+                    out _,
+                    out string errorMessage
+                )
+            )
+            {
+                Log(sessionController.Config, errorMessage);
+                return;
+            }
+
+            // Imagens continuam no encerramento canônico; checkpoints devem
+            // ser pequenos e rápidos para funcionar bem em redes escolares.
+            snapshot.screenshots.Clear();
+            if (
+                !LudusJsonSerializer.TrySerialize(
+                    snapshot,
+                    out string json,
+                    out errorMessage
+                )
+            )
+            {
+                Log(sessionController.Config, errorMessage);
+                return;
+            }
+
+            StartCoroutine(SendCheckpoint(snapshot, json));
         }
 
         private void OnValidate()
@@ -59,6 +115,7 @@ namespace LudusSDK
             }
 
             LudusSdkConfig config = sessionController.Config;
+            LudusRunArchive.RecordCompleted(session, json);
 
             if (config.downloadJsonOnSessionEnd)
             {
@@ -130,6 +187,10 @@ namespace LudusSDK
                 );
                 request.downloadHandler = new DownloadHandlerBuffer();
                 request.SetRequestHeader("Content-Type", "application/json");
+                request.SetRequestHeader(
+                    "X-LUDUS-Checkpoint-Key",
+                    GetCheckpointKey(session.sessionId)
+                );
 
                 yield return request.SendWebRequest();
 
@@ -145,6 +206,7 @@ namespace LudusSDK
                     }
 
                     Log(config, "Sessão enviada: " + session.sessionId);
+                    ClearCheckpointKey(session.sessionId);
                     yield break;
                 }
 
@@ -154,6 +216,94 @@ namespace LudusSDK
                 );
                 SaveFallbackIfEnabled(config, session.sessionId, json);
             }
+        }
+
+        private IEnumerator SendCheckpoint(
+            LudusSession session,
+            string json
+        )
+        {
+            LudusSdkConfig config = sessionController.Config;
+            if (string.IsNullOrWhiteSpace(config.apiBaseUrl))
+            {
+                yield break;
+            }
+
+            checkpointRequestInProgress = true;
+            string url = config.apiBaseUrl.TrimEnd('/') +
+                "/api/sessions/checkpoint";
+
+            using (UnityWebRequest request = new UnityWebRequest(
+                url,
+                UnityWebRequest.kHttpVerbPUT
+            ))
+            {
+                request.uploadHandler = new UploadHandlerRaw(
+                    Encoding.UTF8.GetBytes(json)
+                );
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.SetRequestHeader("Content-Type", "application/json");
+                request.SetRequestHeader(
+                    "X-LUDUS-Checkpoint-Key",
+                    GetCheckpointKey(session.sessionId)
+                );
+
+                yield return request.SendWebRequest();
+
+                if (request.result == UnityWebRequest.Result.Success)
+                {
+                    Log(
+                        config,
+                        "Progresso parcial salvo: " + session.sessionId
+                    );
+                }
+                else
+                {
+                    Log(
+                        config,
+                        "Não foi possível atualizar o progresso parcial. " +
+                            request.error
+                    );
+                }
+            }
+
+            checkpointRequestInProgress = false;
+        }
+
+        private string GetCheckpointKey(string sessionId)
+        {
+            if (
+                !string.Equals(
+                    checkpointSessionId,
+                    sessionId,
+                    StringComparison.Ordinal
+                ) ||
+                string.IsNullOrWhiteSpace(checkpointKey)
+            )
+            {
+                checkpointSessionId = sessionId;
+                checkpointKey = Guid.NewGuid().ToString("N") +
+                    Guid.NewGuid().ToString("N");
+            }
+
+            return checkpointKey;
+        }
+
+        private void ClearCheckpointKey(string sessionId)
+        {
+            if (
+                !string.Equals(
+                    checkpointSessionId,
+                    sessionId,
+                    StringComparison.Ordinal
+                )
+            )
+            {
+                return;
+            }
+
+            checkpointSessionId = string.Empty;
+            checkpointKey = string.Empty;
         }
 
         private static void SaveFallbackIfEnabled(

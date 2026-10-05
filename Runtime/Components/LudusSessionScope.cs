@@ -91,11 +91,57 @@ namespace LudusSDK
             }
 
             string displayName = ResolveSessionDisplayName();
-            bool started = LudusSdk.TryStartSessionForManualImport(
-                displayName,
-                out LudusSessionController controller,
-                out errorMessage
+            bool hasParticipant = LudusParticipantContext.TryResolve(
+                Application.absoluteURL,
+                out LudusParticipant participant,
+                out string participantError
             );
+
+            if (!hasParticipant && !string.IsNullOrWhiteSpace(participantError))
+            {
+                errorMessage = participantError;
+                return false;
+            }
+
+            LudusSessionController controller;
+            bool started;
+            if (hasParticipant)
+            {
+                started = LudusSdk.TryStartSession(
+                    participant.studentId,
+                    participant.playerId,
+                    out controller,
+                    out errorMessage
+                );
+            }
+            else
+            {
+                if (!LudusSdk.TryGetSingleSessionController(
+                    out controller,
+                    out errorMessage
+                ))
+                {
+                    return false;
+                }
+
+                if (
+                    controller.Config != null &&
+                    controller.Config.sendOnSessionEnd
+                )
+                {
+                    errorMessage =
+                        "O envio automático exige um participante identificado. " +
+                        "Abra o WebGL com ludusStudentId e ludusPlayerId na URL " +
+                        "ou informe a identidade pela API pública do SDK.";
+                    return false;
+                }
+
+                started = controller.TryStartSession(
+                    LudusSdk.StudentIdPendingManualImport,
+                    displayName,
+                    out errorMessage
+                );
+            }
 
             if (!started)
             {

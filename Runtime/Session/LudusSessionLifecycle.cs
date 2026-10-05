@@ -748,6 +748,25 @@ public bool TryRecordDragPoint(
             );
         }
 
+        public bool TryCreateSnapshot(
+            out LudusSession snapshot,
+            out string errorMessage
+        )
+        {
+            if (!HasActiveSession)
+            {
+                snapshot = null;
+                errorMessage = "Não existe sessão ativa para criar uma cópia.";
+                return false;
+            }
+
+            snapshot = activeSession.CreateSnapshot(
+                GetElapsedMilliseconds()
+            );
+            errorMessage = string.Empty;
+            return true;
+        }
+
 private bool TryValidateRawCapture(
     bool capabilityEnabled,
     string capabilityName,

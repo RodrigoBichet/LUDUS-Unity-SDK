@@ -59,6 +59,20 @@ namespace LudusSDK
                 : "ludus-" + gameName + "-" + label + "-" + dateTime + ".json";
         }
 
+        public static string CreateRunBundleFileName(LudusSdkConfig config)
+        {
+            string gameName = SanitizeFileNamePart(
+                config != null ? config.GetResolvedGameId() : "jogo"
+            );
+            if (string.IsNullOrWhiteSpace(gameName))
+            {
+                gameName = "jogo";
+            }
+
+            return "ludus-" + gameName + "-execucao-" +
+                DateTimeOffset.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".json";
+        }
+
         private static string GetEndedAtForFileName(LudusSession session)
         {
             if (
