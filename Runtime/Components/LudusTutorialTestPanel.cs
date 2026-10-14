@@ -19,6 +19,12 @@ namespace LudusSDK
         [Tooltip("Use um rótulo simples, como 'teste-webgl'. O aluno será escolhido no Dashboard ao importar o JSON.")]
         public string sessionDisplayName = "Teste do tutorial";
 
+        [Header("Painel manual opcional")]
+
+        [InspectorName("Exibir painel manual de JSON")]
+        [Tooltip("Ative somente para testar início, encerramento e exportação manual de JSON sem usar o acesso por código da coleta.")]
+        public bool showManualSessionControls;
+
         private string statusMessage =
             "Pronto para iniciar uma sessão fictícia.";
 
@@ -56,6 +62,11 @@ namespace LudusSDK
 
         private void OnGUI()
         {
+            if (!showManualSessionControls)
+            {
+                return;
+            }
+
             LudusSessionController controller =
                 FindFirstObjectByType<LudusSessionController>();
             bool hasActiveSession =
@@ -144,7 +155,7 @@ namespace LudusSDK
             GUILayout.Space(8f * scale);
             string instructions = hasInteractionExercise
                 ? "1. Inicie a sessão fictícia.\n"
-                    + "2. Clique no botão, conclua o campo de texto e arraste a peça.\n"
+                    + "2. Percorra os cenários com Anterior e Próximo e realize as interações configuradas.\n"
                     + "3. Encerre a sessão antes de sair do Play Mode para conferir o JSON."
                 : "1. Inicie a sessão fictícia.\n"
                     + "2. Mova o ponteiro e clique na Game View.\n"
@@ -184,6 +195,10 @@ namespace LudusSDK
                     LogSessionSummary(
                         json,
                         "Sessão do tutorial encerrada com sucesso."
+                    );
+                    Debug.Log(
+                        "[LUDUS] Tudo ocorreu certo! Agora siga a etapa de "
+                            + "Build and Run para testar no navegador."
                     );
                 }
 

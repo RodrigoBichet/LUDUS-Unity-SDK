@@ -6,6 +6,45 @@ namespace LudusSDK.Tests
     public sealed class LudusSemanticBridgeTests
     {
         [Test]
+        public void Adaptadores_ReutilizamUmaUnicaPonteSemantica()
+        {
+            GameObject buttonObject = new GameObject(
+                "Alternativa",
+                typeof(UnityEngine.UI.Button)
+            );
+            GameObject dragTarget = new GameObject("Destino de arraste");
+            GameObject contactTarget = new GameObject("Destino de contato");
+            GameObject progressTarget = new GameObject("Meta de progresso");
+
+            buttonObject.AddComponent<LudusButtonOutcomeAdapter>();
+            dragTarget.AddComponent<LudusTagMatchDropAdapter>();
+            contactTarget.AddComponent<LudusPhysicsTagOutcomeAdapter>();
+            progressTarget.AddComponent<LudusProgressThresholdAdapter>();
+
+            Assert.That(
+                buttonObject.GetComponents<LudusSemanticBridge>(),
+                Has.Length.EqualTo(1)
+            );
+            Assert.That(
+                dragTarget.GetComponents<LudusSemanticBridge>(),
+                Has.Length.EqualTo(1)
+            );
+            Assert.That(
+                contactTarget.GetComponents<LudusSemanticBridge>(),
+                Has.Length.EqualTo(1)
+            );
+            Assert.That(
+                progressTarget.GetComponents<LudusSemanticBridge>(),
+                Has.Length.EqualTo(1)
+            );
+
+            Object.DestroyImmediate(progressTarget);
+            Object.DestroyImmediate(contactTarget);
+            Object.DestroyImmediate(dragTarget);
+            Object.DestroyImmediate(buttonObject);
+        }
+
+        [Test]
         public void PonteVisual_RegistraFluxoSemanticoEAtualizaMetricas()
         {
             LudusSdkConfig config =

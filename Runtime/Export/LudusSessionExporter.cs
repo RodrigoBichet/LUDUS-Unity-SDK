@@ -175,7 +175,28 @@ namespace LudusSDK
                 yield break;
             }
 
-            string url = config.apiBaseUrl.TrimEnd('/') + "/api/sessions";
+            bool hasCollectionConnection = LudusCollectionContext.TryGet(
+                out LudusCollectionConnection collectionConnection,
+                out string collectionError
+            );
+            if (
+                !hasCollectionConnection &&
+                string.Equals(
+                    session.studentId,
+                    LudusSdk.StudentIdPendingManualImport,
+                    StringComparison.Ordinal
+                )
+            )
+            {
+                Log(config, collectionError);
+                SaveFallbackIfEnabled(config, session.sessionId, json);
+                yield break;
+            }
+
+            string url = config.apiBaseUrl.TrimEnd('/') +
+                (hasCollectionConnection
+                    ? "/api/collections/sdk-sessions"
+                    : "/api/sessions");
 
             using (UnityWebRequest request = new UnityWebRequest(
                 url,
@@ -191,6 +212,13 @@ namespace LudusSDK
                     "X-LUDUS-Checkpoint-Key",
                     GetCheckpointKey(session.sessionId)
                 );
+                if (hasCollectionConnection)
+                {
+                    request.SetRequestHeader(
+                        "Authorization",
+                        "Bearer " + collectionConnection.Token
+                    );
+                }
 
                 yield return request.SendWebRequest();
 
@@ -212,7 +240,8 @@ namespace LudusSDK
 
                 Log(
                     config,
-                    "Envio falhou; usando fallback local. " + request.error
+                    "Envio falhou; usando fallback local. " +
+                        ReadRequestError(request)
                 );
                 SaveFallbackIfEnabled(config, session.sessionId, json);
             }
@@ -229,9 +258,28 @@ namespace LudusSDK
                 yield break;
             }
 
+            bool hasCollectionConnection = LudusCollectionContext.TryGet(
+                out LudusCollectionConnection collectionConnection,
+                out string collectionError
+            );
+            if (
+                !hasCollectionConnection &&
+                string.Equals(
+                    session.studentId,
+                    LudusSdk.StudentIdPendingManualImport,
+                    StringComparison.Ordinal
+                )
+            )
+            {
+                Log(config, collectionError);
+                yield break;
+            }
+
             checkpointRequestInProgress = true;
             string url = config.apiBaseUrl.TrimEnd('/') +
-                "/api/sessions/checkpoint";
+                (hasCollectionConnection
+                    ? "/api/collections/sdk-sessions/checkpoint"
+                    : "/api/sessions/checkpoint");
 
             using (UnityWebRequest request = new UnityWebRequest(
                 url,
@@ -247,6 +295,13 @@ namespace LudusSDK
                     "X-LUDUS-Checkpoint-Key",
                     GetCheckpointKey(session.sessionId)
                 );
+                if (hasCollectionConnection)
+                {
+                    request.SetRequestHeader(
+                        "Authorization",
+                        "Bearer " + collectionConnection.Token
+                    );
+                }
 
                 yield return request.SendWebRequest();
 
@@ -262,7 +317,7 @@ namespace LudusSDK
                     Log(
                         config,
                         "Não foi possível atualizar o progresso parcial. " +
-                            request.error
+                            ReadRequestError(request)
                     );
                 }
             }
@@ -333,6 +388,35 @@ namespace LudusSDK
             }
 
             Debug.LogError("[LUDUS] Falha ao salvar fallback local: " + errorMessage);
+        }
+
+        private static string ReadRequestError(UnityWebRequest request)
+        {
+            string fallback = string.IsNullOrWhiteSpace(request.error)
+                ? "O servidor recusou a solicitação."
+                : request.error;
+
+            try
+            {
+                ErrorResponse response = JsonUtility.FromJson<ErrorResponse>(
+                    request.downloadHandler == null
+                        ? string.Empty
+                        : request.downloadHandler.text
+                );
+                return string.IsNullOrWhiteSpace(response?.mensagem)
+                    ? fallback
+                    : response.mensagem;
+            }
+            catch (Exception)
+            {
+                return fallback;
+            }
+        }
+
+        [Serializable]
+        private sealed class ErrorResponse
+        {
+            public string mensagem;
         }
 
         private static void Log(LudusSdkConfig config, string message)

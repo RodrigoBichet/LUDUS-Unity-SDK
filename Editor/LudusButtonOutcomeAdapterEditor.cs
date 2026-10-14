@@ -21,9 +21,12 @@ namespace LudusSDK.Editor
                 serializedObject.FindProperty("trackingEnabled"),
                 new GUIContent("Acompanhar esta alternativa")
             );
-            EditorGUILayout.PropertyField(
-                serializedObject.FindProperty("configuredOutcome"),
-                new GUIContent("Resultado desta alternativa")
+            SerializedProperty configuredOutcome =
+                serializedObject.FindProperty("configuredOutcome");
+            configuredOutcome.enumValueIndex = EditorGUILayout.Popup(
+                new GUIContent("Resultado desta alternativa"),
+                configuredOutcome.enumValueIndex,
+                new[] { "Correto", "Incorreto" }
             );
             EditorGUILayout.PropertyField(
                 serializedObject.FindProperty("answerDisplayName"),

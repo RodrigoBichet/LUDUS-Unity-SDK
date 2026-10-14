@@ -21,9 +21,18 @@ namespace LudusSDK.Editor
                 serializedObject.FindProperty("trackingEnabled"),
                 new GUIContent("Acompanhar este contato")
             );
-            EditorGUILayout.PropertyField(
-                serializedObject.FindProperty("contactMode"),
-                new GUIContent("Tipo de contato")
+            SerializedProperty contactMode =
+                serializedObject.FindProperty("contactMode");
+            contactMode.enumValueIndex = EditorGUILayout.Popup(
+                "Tipo de contato",
+                contactMode.enumValueIndex,
+                new[]
+                {
+                    "Trigger 2D",
+                    "Colisão 2D",
+                    "Trigger 3D",
+                    "Colisão 3D",
+                }
             );
 
             SerializedProperty expectedTag =

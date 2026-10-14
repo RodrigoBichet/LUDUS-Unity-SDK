@@ -29,9 +29,12 @@ namespace LudusSDK.Editor
                 serializedObject.FindProperty("targetValue"),
                 new GUIContent("Valor da meta")
             );
-            EditorGUILayout.PropertyField(
-                serializedObject.FindProperty("comparison"),
-                new GUIContent("Condição da meta")
+            SerializedProperty comparison =
+                serializedObject.FindProperty("comparison");
+            comparison.enumValueIndex = EditorGUILayout.Popup(
+                "Condição da meta",
+                comparison.enumValueIndex,
+                new[] { "Maior ou igual", "Menor ou igual", "Igual" }
             );
 
             if (
@@ -47,9 +50,18 @@ namespace LudusSDK.Editor
             }
 
             EditorGUILayout.Space();
-            EditorGUILayout.PropertyField(
-                serializedObject.FindProperty("action"),
-                new GUIContent("Ao atingir a meta")
+            SerializedProperty action = serializedObject.FindProperty(
+                "action"
+            );
+            action.enumValueIndex = EditorGUILayout.Popup(
+                "Ao atingir a meta",
+                action.enumValueIndex,
+                new[]
+                {
+                    "Registrar acerto",
+                    "Concluir fase",
+                    "Registrar acerto e concluir fase",
+                }
             );
             EditorGUILayout.PropertyField(
                 serializedObject.FindProperty("resultDisplayName"),

@@ -26,7 +26,7 @@ namespace LudusSDK.Editor
             EditorGUILayout.Space();
 
             EditorGUILayout.HelpBox(
-                "Em um UnityEvent, arraste este objeto e escolha LudusSemanticBridge > RegistrarAcerto, RegistrarErro, RegistrarInicioDeFase ou RegistrarConclusaoDeFase. Para tentativas de arraste, vincule também o método correspondente.",
+                "Em um UnityEvent, arraste este objeto e escolha LudusSemanticBridge > RegistrarCategoriaSelecionada, RegistrarInicioDeFase, RegistrarAcerto, RegistrarErro ou RegistrarConclusaoDeFase. Para tentativas de arraste, vincule também o método correspondente.",
                 MessageType.None
             );
 

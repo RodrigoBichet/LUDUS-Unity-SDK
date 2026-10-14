@@ -9,6 +9,7 @@ namespace LudusSDK
     /// incorreta; essa decisão continua pertencendo ao jogo.
     /// </summary>
     [AddComponentMenu("LUDUS/Ponte semântica do jogo")]
+    [DisallowMultipleComponent]
     public sealed class LudusSemanticBridge : MonoBehaviour
     {
         [SerializeField]

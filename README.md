@@ -25,12 +25,27 @@ está conhecendo o SDK pela primeira vez.
 - permite recortes extras por Canvas, painel ou atividade;
 - captura imagens JPEG opcionais para contextualizar o mapa de interações;
 - gera um JSON por sessão;
-- envia para `POST /api/sessions` quando há ambiente configurado;
+- envia pela coleta pareada ou por `POST /api/sessions` quando há ambiente
+  configurado;
 - preserva fallback local quando está offline ou o envio falha.
 
 O SDK **não** interpreta regras pedagógicas do jogo. Esta versão de avaliação
 concentra-se nas interações observáveis e nos elementos explicitamente
 acompanhados pela pessoa desenvolvedora.
+
+Para uso em turma, o desenvolvedor pode executar **GameObject > LUDUS >
+Adicionar acesso por nome e código** na cena de menu. O comando cria um botão e
+um modal funcionais na raiz da cena. Depois, o desenvolvedor arrasta o objeto
+inteiro para o Canvas visual escolhido. O contêiner ocupa automaticamente esse
+Canvas com escala `1`; para escolher tamanho e posição, edite somente o filho
+**Abrir acesso**. Por padrão, ele aparece como um botão azul compacto com `L`
+branco, seguindo a identidade do LUDUS Observa. A criança informa apenas nome e
+código temporário. Escola, turma e professora já pertencem à coleta criada no
+Dashboard e não devem ser gravadas no projeto Unity.
+
+O painel usa fundos arredondados vetoriais do próprio SDK, sem exigir sprites do
+jogo. Quando encontra `Roboto-Regular` no projeto, o assistente usa essa fonte;
+caso contrário, aplica automaticamente a fonte padrão da Unity.
 
 ## Requisitos
 
@@ -57,10 +72,19 @@ No projeto Unity que receberá o SDK:
 4. Informe:
 
    ```text
-   https://github.com/RodrigoBichet/LUDUS-Unity-SDK.git#v0.1.4
+   https://github.com/RodrigoBichet/LUDUS-Unity-SDK.git#main
    ```
 
 5. Aguarde a Unity importar o pacote.
+
+Para inspecionar o código fora do Package Manager, baixe o ZIP do branch atual:
+
+```text
+https://github.com/RodrigoBichet/LUDUS-Unity-SDK/archive/refs/heads/main.zip
+```
+
+O ZIP é uma alternativa de consulta e instalação manual. Para receber
+atualizações pelo Package Manager, prefira a URL Git acima.
 
 Se o repositório estiver privado, a conta GitHub configurada no computador deve
 ter acesso a ele. Não inclua tokens, senhas ou chaves em arquivos Unity.
@@ -81,45 +105,68 @@ Assets/LUDUS/Tutorial/
 └── TutorialLudus.unity
 ```
 
-A cena contém uma base LUDUS e um painel visível somente no tutorial, com os
-botões **Iniciar sessão fictícia** e **Encerrar sessão e gerar JSON**. Ela usa
-uma identidade fictícia, salva a sessão localmente e, no WebGL, baixa um JSON
-de demonstração; não altera as cenas do jogo.
+A cena contém uma base LUDUS e um laboratório guiado. O fluxo principal usa o
+botão **L** para conectar o nome do participante ao código de uma coleta; ao
+concluir o sexto cenário, a sessão é encerrada e enviada automaticamente. O
+painel de início e exportação manual de JSON fica oculto por padrão e pode ser
+ativado no componente `Ludus Tutorial Test Panel` somente para testes offline.
 
 Para validar no Editor:
 
 1. Abra `Assets/LUDUS/Tutorial/TutorialLudus.unity`.
 2. No Project, selecione
    `Assets/LUDUS/Tutorial/ConfiguracaoTutorialLudus.asset` e observe no
-   Inspector que o tutorial usa o nome **Tutorial LUDUS**, não envia sessões
-   para a plataforma e mantém uma cópia local. Esse asset pertence somente ao
+   Inspector que o tutorial usa o nome **Tutorial LUDUS**. Escolha **Enviar
+   automaticamente ao LUDUS Acompanha**. Esse asset pertence somente ao
    tutorial; não o transforme na configuração do jogo real.
-3. Opcionalmente, use **LUDUS > Tutorial > Adicionar exercício de
-   interações** para criar um botão, um campo de texto e uma peça arrastável
-   dentro dessa cena isolada.
+3. Use **LUDUS > Tutorial > Adicionar exercício de
+   interações** para criar um laboratório com seis páginas e uma tela final:
+   interações automáticas, um miniquiz com alternativas e imagem, arraste com
+   destino, contato por física, meta por valor e ciclo guiado de categoria/fase.
+   O gerador cria a tag
+   exclusiva `LARespostaCorretaTutorial` para os exemplos, sem reutilizar a
+   tag global `Player` do projeto.
 4. Se adicionou o exercício, abra **LUDUS > Configurar interações desta cena**
-   e arraste `BotaoTutorial`, `CampoTextoTutorial` e
-   `PecaArrastavelTutorial` da Hierarchy para o campo **Arraste um objeto
-   aqui** da janela **Interações LUDUS**.
-5. Pressione **Play**.
-6. Clique em **Iniciar sessão fictícia**.
-7. Realize as interações apresentadas na Game View.
-8. Ainda no Play Mode, clique em **Encerrar sessão e gerar JSON**.
-9. Confira o JSON no Console e a cópia local em `ludus_offline`.
+   e, na página **01 — Interações automáticas**, arraste `BotaoTutorial`,
+   `CampoTextoTutorial` e `PecaArrastavelTutorial` da Hierarchy para o campo
+   **Arraste um objeto aqui** da janela **Interações LUDUS**.
+5. Execute **GameObject > LUDUS > Adicionar acesso por nome e código** e gere
+   uma coleta de teste no Dashboard.
+6. Pressione **Play**, use o botão **L** e informe o nome de um participante e
+   o código da coleta. O tutorial já usa **Enviar automaticamente ao LUDUS
+   Acompanha**. Se quiser validar a plataforma final, faça também um **Build And
+   Run** WebGL; selecione **Desenvolvimento: enviar e também baixar** somente se
+   quiser receber uma cópia JSON durante esse teste opcional.
+7. Use **Anterior** e **Próximo** no laboratório e realize as interações
+   configuradas em cada página. **Próximo** permanece bloqueado até a tarefa
+   atual ser concluída; a orientação acima dos botões informa o que falta, e
+   **Anterior** permite revisar o que já foi feito. No miniquiz, responda
+   `1 + 1`, depois identifique a imagem com duas formas. No ciclo semântico,
+   execute somente a ação liberada e acompanhe o progresso visual. Depois da
+   sexta página, clique em **Próximo** para abrir **Tutorial concluído**.
+8. Ao abrir **Tutorial concluído**, aguarde a confirmação de que o envio foi
+   iniciado automaticamente e confira a coleta no Dashboard.
 
-Ao integrar o SDK ao jogo real, o comando **LUDUS > Adicionar coleta ao meu
-jogo** cria outro asset em `Assets/LUDUS/ConfiguracaoLudus.asset` — ou um nome
+No primeiro build WebGL, deixe somente `TutorialLudus` habilitada no índice 0
+do **Build Profile**. Depois do teste, retire-a do perfil e habilite novamente
+as cenas originais antes de publicar o jogo.
+
+O roteiro completo — incluindo resultado semântico de botão, validação,
+importação manual, laboratório fictício, código de coleta e recebimento
+automático no Dashboard — está em
+[`Documentation~/GUIA_INTEGRACAO_END_TO_END.md`](Documentation~/GUIA_INTEGRACAO_END_TO_END.md).
+
+Ao integrar o SDK ao jogo real, o comando **GameObject > LUDUS > Adicionar
+coleta ao meu jogo** cria outro asset em `Assets/LUDUS/ConfiguracaoLudus.asset` — ou um nome
 numerado equivalente se já existir. Nesse novo asset, informe o nome do jogo,
 escolha as cenas acompanhadas e configure a forma de entrega adequada. Assim, a
 pessoa desenvolvedora pratica primeiro com dados fictícios e depois repete o
 mesmo conceito sem reutilizar a configuração do tutorial.
 
-Encerre a sessão antes de sair do Play Mode. Assim, o JSON aparece imediatamente
-no Console e você confirma visualmente que o teste terminou. Se o Play Mode for
-interrompido por engano enquanto a sessão do tutorial ainda estiver ativa, o
-painel encerra e serializa essa sessão automaticamente como proteção contra
-perda. Essa proteção pertence somente ao tutorial e não substitui o encerramento
-explícito no fluxo real do jogo.
+Se o Play Mode for interrompido por engano enquanto uma sessão do tutorial
+estiver ativa, o componente tutorial tenta encerrá-la como proteção contra
+perda. No jogo real, conecte o início e o encerramento aos momentos verdadeiros
+da atividade.
 
 Ao adicionar uma interação, o SDK preenche inicialmente **Nome exibido no
 dashboard** com o nome do GameObject. Esse texto pode ser alterado para ficar
@@ -136,18 +183,16 @@ didático. O movimento visual continua sendo responsabilidade do jogo real; o
 componente `LudusTrackedDraggable` observa e registra o gesto, sem alterar as
 regras ou a posição dos objetos do jogo.
 
-O painel do exercício fica à direita de propósito. Durante o Play, o painel de
-controle da sessão aparece à esquerda. Não é necessário reposicionar o Canvas
-na aba Scene; a cena também recebe uma câmera neutra para a Game View não exibir
-`No cameras rendering`.
+O painel do exercício fica centralizado. A cena também recebe uma câmera neutra
+para a Game View não exibir `No cameras rendering`.
 
 Para validar no WebGL, adicione `TutorialLudus` ao Build Profile como primeira
-cena habilitada e use **Build And Run**. O JSON deve mostrar
-`"platform":"WebGLPlayer"`.
+cena habilitada e use **Build And Run**. Depois do pareamento e da conclusão,
+confirme o participante e a sessão na coleta usada.
 
-Se quiser validar também a importação manual no Dashboard, use o JSON fictício
-gerado pelo tutorial e escolha o destino somente dentro de um ambiente
-demonstrativo autorizado.
+Se quiser validar também a importação manual no Dashboard, marque **Exibir
+painel manual de JSON** no componente `Ludus Tutorial Test Panel`, gere um JSON
+fictício e use somente um ambiente demonstrativo autorizado.
 
 > O painel do tutorial não é adicionado à integração real. Ele existe apenas
 > para aprender e validar o pacote sem poluir a interface do jogo.
@@ -173,15 +218,53 @@ conecta automaticamente:
 A base permanece ativa ao trocar de cena. Caso a cena inicial seja carregada
 novamente, o SDK preserva a base original e evita uma duplicação de sessão.
 
-### 2. Configure o jogo e as cenas
+### 2. Abra e configure o asset do jogo
 
-No painel **Project**, selecione o asset criado em `Assets/LUDUS/` e preencha:
+Depois que o assistente terminar:
 
-- **Nome do jogo**, por exemplo `Historietas Divertidas`;
+1. selecione o GameObject **LUDUS SDK** na **Hierarchy**;
+2. no componente **Ludus Session Controller**, localize **Configuração do jogo**;
+3. clique na referência `ConfiguracaoLudus` para destacá-la no painel
+   **Project**;
+4. selecione o asset destacado em `Assets/LUDUS/ConfiguracaoLudus.asset`.
+
+O Inspector desse asset concentra as escolhas da integração:
+
+- **Nome do jogo**: nome legível que aparecerá no LUDUS Acompanha. O `gameId`
+  técnico é gerado internamente e não precisa ser digitado;
+- **Destino dos dados**:
+  - **Enviar automaticamente ao LUDUS Acompanha**: envia sessões e checkpoints
+    para a API. É o modo indicado quando estudantes usarão nome e código de
+    coleta;
+  - **Exportar JSON manualmente**: não envia à plataforma. A execução fica
+    disponível para exportação e posterior importação em um ambiente
+    autorizado do Dashboard;
+  - **Desenvolvimento: enviar e também baixar**: envia à plataforma e também
+    oferece o JSON para inspeção. Use apenas durante testes, pois pode gerar
+    downloads extras;
+- **Guardar também uma cópia de segurança local**: mantém um fallback local
+  quando o ambiente permitir;
+- **Salvar progresso parcial durante a atividade**: envia checkpoints sem
+  encerrar a sessão, protegendo parte do andamento em execuções longas;
+- **Rótulo do arquivo (opcional)**: personaliza o nome do arquivo nos modos que
+  permitem exportação;
+- **Conexão com ambiente LUDUS (avançado)**: mostra a origem oficial da API,
+  preenchida automaticamente em novos assets. Abra essa opção somente para
+  conferir ou trocar o ambiente; informe apenas a origem, sem `/api`,
+  credenciais ou tokens;
 - **Capturar automaticamente em**:
   - **Todas as cenas**, para acompanhar o jogo inteiro;
   - **Somente cenas selecionadas**, para registrar apenas cenas marcadas no
-    Build Profile.
+    Build Profile;
+- **Interações automáticas**: habilitam cliques, trajetória do mouse e trajetória
+  de arraste. Desative apenas o que não fizer sentido para o jogo;
+- **Resultados informados pelo jogo**: categorias, fases, acertos, erros e eventos
+  personalizados só devem ser habilitados quando a regra do jogo estiver ligada
+  ao SDK pela Ponte semântica, por um adaptador ou pela API C#;
+- **Capturas visuais**: registram uma imagem de referência opcional para sobrepor
+  o mapa de interações;
+- **Exibir mensagens detalhadas no Console**: ajuda durante a integração e pode
+  ser desativado depois da validação.
 
 No modo de cenas selecionadas, marque as cenas de atividade. Nas demais, a
 sessão continua ativa, mas mouse e cliques ficam pausados. Ao voltar para uma
@@ -202,16 +285,15 @@ Habilite imagens somente quando elas forem necessárias para interpretar as
 interações e houver autorização adequada. Não use a captura em telas com dados
 pessoais, credenciais, conversas ou outras informações sensíveis.
 
-O nome técnico `gameId` é gerado internamente a partir do nome do jogo. Não é
-necessário preenchê-lo.
-
 ### 3. Inicie e encerre no fluxo do jogo
 
 O jogo é quem sabe quando um estudante foi identificado e quando a atividade
 terminou. Conecte estes dois momentos ao fluxo existente do jogo:
 
-Sem escrever código, adicione **LUDUS > Fluxo > Sessão acompanhada** a um
-objeto que permaneça ativo durante toda a atividade. O componente pode iniciar
+Sem escrever código, selecione um objeto que permaneça ativo durante toda a
+atividade e, no **Inspector**, use **Add Component > LUDUS > Fluxo > Sessão
+acompanhada**. Essa opção pertence ao seletor de componentes, não ao menu
+superior **LUDUS**. O componente pode iniciar
 ao ser ativado e encerrar ao ser desativado ou quando a cena for fechada.
 
 Uma cena pode conter vários Canvas, painéis e etapas aleatórias: eles continuam
@@ -280,7 +362,7 @@ não deduz desempenho pedagógico a partir de cliques, trajetórias ou imagens.
 ### Conectar eventos pelo Inspector, sem alterar scripts
 
 Quando o jogo já expõe um `UnityEvent` para o resultado ou a progressão,
-adicione **LUDUS > Ponte semântica do jogo** a um objeto da atividade. Configure
+adicione **Add Component > LUDUS > Ponte semântica do jogo** a um objeto da atividade. Configure
 uma ponte por atividade ou fase e, no evento existente, arraste esse objeto e
 escolha um dos métodos públicos:
 
@@ -338,11 +420,12 @@ observação. Em tempo de execução, a tag continua decidindo acerto ou erro, m
 o SDK usa prioritariamente o texto, a imagem ou o sprite visível para registrar
 a peça arrastada, a resposta esperada e as alternativas daquele Canvas.
 
-Para arrastes de UI que utilizam o `EventSystem`, adicione **LUDUS >
-Adaptadores > Resultado de arraste por tag** à área que recebe o drop. Selecione
+Para arrastes de UI que utilizam o `EventSystem`, adicione **Add Component >
+LUDUS > Adaptadores > Resultado de arraste por tag** à área que recebe o drop. Selecione
 a tag considerada correta e informe nomes legíveis para o destino e para a
-resposta esperada. Indique uma Ponte semântica compartilhada ou mantenha uma
-única ponte na cena para que o adaptador a localize automaticamente.
+resposta esperada. A Unity adiciona a Ponte semântica no mesmo GameObject
+quando ela ainda não existe e reutiliza a instância presente quando o destino
+já está configurado.
 
 Quando a área recebe `OnDrop`, o adaptador compara a tag da peça indicada por
 `pointerDrag` e pode registrar tanto `DragAttempt` quanto `CorrectMatch` ou
@@ -356,8 +439,8 @@ próprio precisam de outro adaptador ou da API C#.
 
 #### Adaptador de contato por tag
 
-Para jogos que usam física, adicione **LUDUS > Adaptadores > Resultado de
-contato por tag** ao objeto que recebe o contato. Escolha entre trigger ou
+Para jogos que usam física, adicione **Add Component > LUDUS > Adaptadores >
+Resultado de contato por tag** ao objeto que recebe o contato. Escolha entre trigger ou
 colisão 2D/3D, selecione a tag correta e indique a resposta esperada. A busca
 opcional nos objetos pais cobre o caso comum em que o collider pertence a um
 filho e a tag está no objeto principal.
@@ -368,14 +451,14 @@ selecionado e registra `CorrectMatch` ou `WrongMatch`.
 
 #### Adaptador de alternativas por botão
 
-Adicione **LUDUS > Adaptadores > Resultado de botão** a uma alternativa com
+Adicione **Add Component > LUDUS > Adaptadores > Resultado de botão** a uma alternativa com
 `Button`. Marque-a como correta ou incorreta e informe os nomes da resposta
 dada e esperada. O adaptador acrescenta um listener a `Button.onClick` sem
 remover os listeners existentes do jogo.
 
 #### Adaptador de meta por valor ou pontuação
 
-Adicione **LUDUS > Adaptadores > Meta por valor ou pontuação** ao controlador
+Adicione **Add Component > LUDUS > Adaptadores > Meta por valor ou pontuação** ao controlador
 da atividade. Configure a meta, a comparação e o evento semântico desejado.
 Ligue os eventos já existentes no jogo a `AdicionarUm`, `SubtrairUm`,
 `Adicionar`, `DefinirValor` ou `AvaliarAgora`.
@@ -461,10 +544,9 @@ Use apenas a origem, sem `/api` no final.
   apenas para validação técnica.
 - **Salvar também uma cópia local** mantém um arquivo local mesmo se o envio
   funcionar.
-- **Baixar arquivo JSON ao encerrar (WebGL)** solicita um download normal no
-  navegador, pronto para a importação manual no Dashboard. A pasta de destino
-  é definida pelo navegador e pelo sistema operacional, portanto funciona em
-  Windows, macOS e Linux.
+- Nos dois destinos que incluem exportação, o WebGL solicita um download normal
+  no navegador, pronto para a importação manual no Dashboard. A pasta de destino
+  é definida pelo navegador e pelo sistema operacional.
 - **Rótulo do arquivo (opcional)** organiza o nome do download. Com o rótulo
   `atividade 1`, por exemplo, o navegador recebe
   `ludus-nome-do-jogo-atividade-1-2026-08-04_14-32-10.json`. Sem rótulo, o
@@ -488,8 +570,8 @@ O schema `1.1.0` separa três conceitos:
 - `status`: `in_progress`, `completed` ou `interrupted`.
 
 Para oferecer um botão pequeno dentro do próprio jogo, crie um `Button` no
-Canvas, posicione-o como preferir e adicione o componente **LUDUS > Fluxo >
-Botão para exportar execução**. O arquivo gerado usa o formato
+Canvas, posicione-o como preferir e adicione o componente **Add Component >
+LUDUS > Fluxo > Botão para exportar execução**. O arquivo gerado usa o formato
 `ludus-session-bundle` e inclui tudo que já foi concluído, mais uma fotografia
 da sessão atual sem encerrá-la. Por padrão o botão se oculta no modo de envio
 automático, pois o professor pode baixar a execução pelo Dashboard.
@@ -512,8 +594,10 @@ impede duplicação antes de gravar. Por segurança, um JSON que já tenha um
 `studentId` técnico diferente continua sendo recusado.
 
 Não coloque JWT de usuário no Unity. O endpoint direto de telemetria permanece
-sem JWT por compatibilidade nesta etapa; uma credencial específica do SDK será
-tratada separadamente.
+disponível para portais que já fornecem uma identidade técnica. No fluxo por
+nome+código, o backend emite uma credencial temporária limitada àquela coleta e
+ao participante; o SDK a mantém somente em memória e a envia no cabeçalho das
+rotas pareadas.
 
 Para testes, use somente estudantes fictícios, backend local ou ambiente
 demonstrativo seguro. Nunca use dados reais, MongoDB Atlas produtivo, tokens,

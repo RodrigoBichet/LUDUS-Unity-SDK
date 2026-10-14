@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -11,6 +12,7 @@ namespace LudusSDK
     [AddComponentMenu("")]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
+    [RequireComponent(typeof(CanvasGroup))]
     public sealed class LudusTutorialDraggableItem :
         MonoBehaviour,
         IBeginDragHandler,
@@ -19,17 +21,39 @@ namespace LudusSDK
     {
         private RectTransform itemRect;
         private RectTransform movementArea;
+        private CanvasGroup canvasGroup;
         private Vector2 pointerOffset;
+        private Vector2 initialAnchoredPosition;
+        private bool initialPositionCaptured;
         private bool dragStarted;
+
+        public event Action<LudusTutorialDraggableItem> DragCompleted;
 
         private void Awake()
         {
+            RememberInitialPosition();
+        }
+
+        private void OnEnable()
+        {
             CacheRectTransforms();
+            CaptureInitialPosition();
+        }
+
+        public void RememberInitialPosition()
+        {
+            CacheRectTransforms();
+            if (itemRect != null)
+            {
+                initialAnchoredPosition = itemRect.anchoredPosition;
+                initialPositionCaptured = true;
+            }
         }
 
         private void OnDisable()
         {
             dragStarted = false;
+            SetRaycastBlocking(true);
         }
 
         public void OnBeginDrag(PointerEventData eventData)
@@ -42,6 +66,7 @@ namespace LudusSDK
 
             pointerOffset = (Vector2)itemRect.localPosition - localPosition;
             dragStarted = true;
+            SetRaycastBlocking(false);
             transform.SetAsLastSibling();
         }
 
@@ -72,7 +97,35 @@ namespace LudusSDK
 
         public void OnEndDrag(PointerEventData eventData)
         {
+            CacheRectTransforms();
             dragStarted = false;
+            SetRaycastBlocking(
+                canvasGroup == null || canvasGroup.interactable
+            );
+            DragCompleted?.Invoke(this);
+        }
+
+        public void ReturnToInitialPosition()
+        {
+            CacheRectTransforms();
+            CaptureInitialPosition();
+            if (itemRect != null)
+            {
+                itemRect.anchoredPosition = initialAnchoredPosition;
+            }
+
+            dragStarted = false;
+            SetInteractionEnabled(true);
+        }
+
+        public void SetInteractionEnabled(bool enabled)
+        {
+            CacheRectTransforms();
+            if (canvasGroup != null)
+            {
+                canvasGroup.interactable = enabled;
+                canvasGroup.blocksRaycasts = enabled;
+            }
         }
 
         private bool TryGetPointerPosition(
@@ -123,6 +176,29 @@ namespace LudusSDK
             if (movementArea == null && transform.parent != null)
             {
                 movementArea = transform.parent as RectTransform;
+            }
+
+            if (canvasGroup == null)
+            {
+                canvasGroup = GetComponent<CanvasGroup>();
+            }
+        }
+
+        private void CaptureInitialPosition()
+        {
+            if (!initialPositionCaptured && itemRect != null)
+            {
+                initialAnchoredPosition = itemRect.anchoredPosition;
+                initialPositionCaptured = true;
+            }
+        }
+
+        private void SetRaycastBlocking(bool shouldBlock)
+        {
+            CacheRectTransforms();
+            if (canvasGroup != null)
+            {
+                canvasGroup.blocksRaycasts = shouldBlock;
             }
         }
     }

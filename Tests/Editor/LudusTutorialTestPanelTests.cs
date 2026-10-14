@@ -7,6 +7,18 @@ namespace LudusSDK.Tests
     public sealed class LudusTutorialTestPanelTests
     {
         [Test]
+        public void PainelManual_IniciaOcultoPorPadrao()
+        {
+            GameObject panelObject = new GameObject("Painel tutorial");
+            LudusTutorialTestPanel panel =
+                panelObject.AddComponent<LudusTutorialTestPanel>();
+
+            Assert.That(panel.showManualSessionControls, Is.False);
+
+            Object.DestroyImmediate(panelObject);
+        }
+
+        [Test]
         public void SairDoPlayMode_EncerraSessaoAtivaUmaUnicaVez()
         {
             LudusSdkConfig config =

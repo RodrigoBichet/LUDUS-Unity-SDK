@@ -12,6 +12,7 @@ namespace LudusSDK
     /// a tag esperada. Não move, reposiciona ou devolve a peça.
     /// </summary>
     [AddComponentMenu("LUDUS/Adaptadores/Resultado de arraste por tag")]
+    [RequireComponent(typeof(LudusSemanticBridge))]
     public sealed class LudusTagMatchDropAdapter :
         MonoBehaviour,
         IDropHandler

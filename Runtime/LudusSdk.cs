@@ -59,7 +59,11 @@ namespace LudusSDK
         public static void ClearParticipant()
         {
             LudusParticipantContext.Clear();
+            LudusCollectionContext.Clear();
         }
+
+        public static bool IsConnectedToCollection =>
+            LudusCollectionContext.IsConnected;
 
         public static bool TryEndSession(
             out string json,

@@ -6,6 +6,105 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 
 ### Adicionado
 
+- Os links de instalação passam a acompanhar o branch `main` enquanto a próxima
+  versão ainda não possui tag, e o README oferece também o download direto do
+  ZIP para consulta ou instalação manual.
+- O asset criado para o tutorial passa a usar envio automático ao LUDUS
+  Acompanha desde o início, o botão L é posicionado no canto superior direito e
+  o Play no Editor torna-se o teste principal; Build And Run e download de JSON
+  permanecem como verificações opcionais.
+- Os comandos de atualização do coletor e marcação de área de observação ficam
+  agrupados no submenu `Avançado (casos específicos)`, com seus usos
+  excepcionais descritos no guia.
+- O tutorial passa a iniciar a sessão automaticamente depois do pareamento por
+  nome e código e a encerrá-la uma única vez ao abrir `Tutorial concluído`,
+  disparando o envio direto à coleta usada no botão L.
+- O painel manual de início e exportação de JSON fica oculto por padrão e pode
+  ser reativado no Inspector apenas para testes offline ou inspeção técnica.
+- O laboratório gerado passa a ocupar quase toda a Game View, com conteúdo
+  centralizado em uma largura confortável, tipografia maior, margens
+  consistentes, navegação ampliada e uma faixa visual de destaque. A versão
+  anterior é recriada mediante confirmação para não preservar o layout
+  comprimido; o painel manual opcional continua sem reservar espaço na tela.
+- Novos assets de configuração passam a trazer automaticamente a origem oficial
+  publicada da API LUDUS. O campo avançado continua editável para ambientes
+  alternativos, sem armazenar credenciais no projeto.
+
+- Todos os adaptadores semânticos passam a criar ou reutilizar automaticamente
+  uma única `LudusSemanticBridge` no mesmo GameObject. A Ponte agora bloqueia
+  componentes duplicados acidentais, e o adaptador de arraste por tag segue a
+  mesma configuração automática já usada por botão, contato e meta.
+- O exercício isolado passa a ser um laboratório guiado com navegação entre
+  seis cenários: interações automáticas, alternativas correta/incorreta por
+  botão, arraste com destino, contato por física 2D, meta por valor e ciclo de
+  categoria/fase, seguidos por uma tela final que orienta o encerramento e a
+  geração do JSON. A atualização de um exercício antigo exige confirmação e
+  recria somente o objeto tutorial.
+- O segundo cenário passa a apresentar um miniquiz em duas etapas: a resposta
+  correta de `1 + 1` libera duas opções visuais distintas, exigindo que a
+  pessoa escolha a imagem com duas formas; escolhas incorretas apresentam
+  feedback e permitem nova tentativa.
+- O sexto cenário transforma os quatro eventos semânticos em um pequeno ciclo
+  de atividade, habilitando uma ação por vez e atualizando uma linha visual de
+  progresso sem substituir os eventos reais configurados pela pessoa
+  desenvolvedora. As etapas ainda bloqueadas agora recebem contraste escuro
+  explícito, e o encerramento bem-sucedido orienta no Console a próxima
+  validação por **Build and Run** no navegador.
+- O controle didático da meta deixa de registrar duas vezes o mesmo clique
+  quando mais de um callback tiver sido associado ao botão no mesmo frame.
+- O laboratório passa a manter **Anterior** e **Próximo** em áreas separadas,
+  bloquear o avanço até a tarefa atual ser cumprida e exibir uma orientação
+  dinâmica do que falta. O progresso permanece concluído ao revisar páginas.
+- Os cenários de arraste e contato processam uma tentativa por vez e
+  apresentam feedback. Alternativas incorretas retornam à origem; a peça
+  correta do cenário de arraste permanece encaixada e bloqueada no destino.
+- A navegação ignora callbacks duplicados do mesmo botão no mesmo frame, para
+  não saltar páginas; o cenário de arraste usa a tag exclusiva
+  `LARespostaCorretaTutorial`, criada pelo gerador sem disputar `Player` ou
+  convenções globais do jogo consumidor.
+- O gerador reconhece a versão intermediária com três páginas e oferece sua
+  atualização explícita para o laboratório de seis cenários, sem duplicar o
+  objeto existente.
+- Controlador didático de progresso, objetos físicos 2D e testes estruturais
+  permitem exercitar os adaptadores restantes sem incorporar regras de um jogo
+  específico ao núcleo do SDK.
+- Componente interno de navegação do tutorial e peças didáticas que liberam o
+  raycast durante o arraste, permitindo que destinos `OnDrop` recebam o evento.
+- A ponte de entrada usada pela cena tutorial no Editor passa a encaminhar o
+  evento de `Drop` ao destino antes de encerrar o arraste, permitindo que o
+  terceiro cenário reconheça a peça solta na área indicada.
+- Testes EditMode para navegação entre cenários e preservação do raycast das
+  peças demonstrativas.
+- Documentação introdutória com tutorial isolado antes da integração real,
+  explicação do fluxo Unity–SDK–API–Dashboard, localização do asset
+  `ConfiguracaoLudus` e descrição de cada grupo do Inspector; caminhos de
+  componentes agora indicam explicitamente o uso de **Add Component**. O
+  tutorial passa a documentar também isolamento no Build Profile, resultado
+  semântico de botão, laboratório fictício, coleta automática e conferência no
+  Dashboard. O roteiro técnico segue a ordem real do Inspector e documenta as
+  escolhas dos assistentes de interação para objeto clicável, arrastável,
+  contêiner e peça filha. Também esclarece os usos de rótulo de arquivo, URL da
+  API, seleção de cenas, resultados semânticos, mapas com captura visual,
+  recortes internos e restauração do Build Profile após o tutorial. Os caminhos
+  de fallback por plataforma e os campos da Área de observação passam a ser
+  explicados em linguagem prática. O tutorial também detalha os Inspectors da
+  Ponte semântica e do Resultado de botão e diferencia os caminhos de resultado
+  para botão, arraste por tag, contato físico, pontuação e eventos próprios. O
+  seletores de botão, meta e contato passam a exibir termos em português sem
+  alterar os valores serializados usados pelo SDK.
+- Assistente **GameObject > LUDUS > Adicionar acesso por nome e código** que
+  cria botão e modal já conectados à coleta temporária do Dashboard na raiz da
+  cena, evitando selecionar automaticamente Canvas técnicos; ao ser arrastado
+  para o Canvas visual, o contêiner ajusta âncoras, dimensões e escala também no
+  modo de edição, mantendo botão e modal em proporções utilizáveis.
+- Padrão visual compacto para o acesso à coleta, com botão `L`, paleta azul do
+  LUDUS Observa e cartão responsivo à área disponível no Canvas do jogo.
+- Fundos arredondados vetoriais sem dependência de sprites e seleção automática
+  de Roboto com fallback para a fonte nativa da Unity.
+- Contexto efêmero de coleta mantido apenas em memória, sem serializar código,
+  token, professora, escola, turma ou aluno em cenas e assets do jogo.
+- Transporte pareado para sessões e checkpoints do SDK, com retorno automático
+  às rotas diretas quando a identidade veio pela URL ou API pública existente.
 - Modos de entrega mutuamente exclusivos para envio automático ao Dashboard,
   exportação manual e desenvolvimento com os dois destinos.
 - Contrato `1.1.0` com `runId`, `attemptNumber` e `status`, preservando cada

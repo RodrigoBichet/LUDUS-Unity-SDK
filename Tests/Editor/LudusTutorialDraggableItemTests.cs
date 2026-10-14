@@ -20,6 +20,7 @@ namespace LudusSDK.Tests
             Assert.That(item, Is.InstanceOf<IBeginDragHandler>());
             Assert.That(item, Is.InstanceOf<IDragHandler>());
             Assert.That(item, Is.InstanceOf<IEndDragHandler>());
+            Assert.That(host.GetComponent<CanvasGroup>(), Is.Not.Null);
 
             Object.DestroyImmediate(host);
         }
@@ -43,6 +44,10 @@ namespace LudusSDK.Tests
             Assert.DoesNotThrow(() => item.OnDrag(null));
             Assert.DoesNotThrow(() => item.OnEndDrag(null));
             Assert.That(rect.anchoredPosition, Is.EqualTo(new Vector2(25f, -30f)));
+            Assert.That(
+                host.GetComponent<CanvasGroup>().blocksRaycasts,
+                Is.True
+            );
 
             Object.DestroyImmediate(area);
         }

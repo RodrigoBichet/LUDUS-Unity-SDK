@@ -198,6 +198,15 @@ namespace LudusSDK
 
             if (pointerData.dragging && draggedObject != null)
             {
+                if (raycast.gameObject != null)
+                {
+                    ExecuteEvents.ExecuteHierarchy(
+                        raycast.gameObject,
+                        pointerData,
+                        ExecuteEvents.dropHandler
+                    );
+                }
+
                 ExecuteEvents.Execute(
                     draggedObject,
                     pointerData,

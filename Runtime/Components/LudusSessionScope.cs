@@ -131,8 +131,9 @@ namespace LudusSDK
                 {
                     errorMessage =
                         "O envio automático exige um participante identificado. " +
-                        "Abra o WebGL com ludusStudentId e ludusPlayerId na URL " +
-                        "ou informe a identidade pela API pública do SDK.";
+                        "Conecte o jogo por nome e código, abra o WebGL com " +
+                        "ludusStudentId e ludusPlayerId na URL ou informe a " +
+                        "identidade pela API pública do SDK.";
                     return false;
                 }
 

@@ -74,7 +74,7 @@ namespace LudusSDK.Editor
             EditorGUIUtility.PingObject(root);
         }
 
-        [MenuItem("GameObject/LUDUS/Atualizar coletor de mouse da base selecionada", false, 11)]
+        [MenuItem("GameObject/LUDUS/Avançado (casos específicos)/Atualizar coletor de mouse da base selecionada", false, 11)]
         private static void UpdateSelectedPointerTracker()
         {
             GameObject root = Selection.activeGameObject;
@@ -122,7 +122,7 @@ namespace LudusSDK.Editor
             EditorGUIUtility.PingObject(root);
         }
 
-        [MenuItem("GameObject/LUDUS/Marcar como área de observação", false, 12)]
+        [MenuItem("GameObject/LUDUS/Avançado (casos específicos)/Marcar como área de observação", false, 12)]
         private static void MarkSelectedAsObservationArea()
         {
             GameObject selectedObject = Selection.activeGameObject;
@@ -139,7 +139,7 @@ namespace LudusSDK.Editor
             EditorGUIUtility.PingObject(selectedObject);
         }
 
-        [MenuItem("GameObject/LUDUS/Marcar como área de observação", true)]
+        [MenuItem("GameObject/LUDUS/Avançado (casos específicos)/Marcar como área de observação", true)]
         private static bool CanMarkSelectedAsObservationArea()
         {
             GameObject selectedObject = Selection.activeGameObject;
@@ -249,9 +249,8 @@ namespace LudusSDK.Editor
 
             config.gameName = "Tutorial LUDUS";
             config.sceneCaptureMode = LudusSceneCaptureMode.AllScenes;
-            config.sendOnSessionEnd = false;
+            config.ApplyDeliveryMode(LudusDeliveryMode.AutomaticDashboard);
             config.saveLocalCopyOnSessionEnd = true;
-            config.downloadJsonOnSessionEnd = true;
             config.enableLocalFallback = true;
             config.debugMode = true;
 
@@ -370,6 +369,10 @@ namespace LudusSDK.Editor
                 ((LudusSdkConfig)target).GetDeliveryMode();
             if (deliveryMode != LudusDeliveryMode.ManualJson)
             {
+                EditorGUILayout.HelpBox(
+                    "Para uso por uma turma, crie na cena de menu o acesso por nome e código em GameObject > LUDUS. O código temporário do Dashboard define professora, escola e turma; nenhuma credencial deve ser preenchida neste asset.",
+                    MessageType.Info
+                );
                 DrawProperty(
                     "enableAutomaticCheckpoints",
                     "Salvar progresso parcial durante a atividade"
@@ -399,7 +402,7 @@ namespace LudusSDK.Editor
             {
                 EditorGUI.indentLevel++;
                 EditorGUILayout.HelpBox(
-                    "Informe somente a origem da API fornecida pelo ambiente LUDUS, sem /api no final. Não informe JWT, tokens, senhas ou outras credenciais no Unity.",
+                    "A origem oficial já vem preenchida. Altere este campo somente para usar outro ambiente LUDUS e informe apenas a origem, sem /api no final, JWT, tokens, senhas ou outras credenciais.",
                     MessageType.Info
                 );
                 DrawProperty("apiBaseUrl", "URL da API LUDUS");
@@ -1098,6 +1101,13 @@ namespace LudusSDK.Editor
 
             Undo.RecordObject(config, "Alterar destino dos dados LUDUS");
             config.ApplyDeliveryMode(selectedMode);
+            if (
+                selectedMode != LudusDeliveryMode.ManualJson &&
+                string.IsNullOrWhiteSpace(config.apiBaseUrl)
+            )
+            {
+                config.apiBaseUrl = LudusSdkConfig.DefaultApiBaseUrl;
+            }
             EditorUtility.SetDirty(config);
             serializedObject.Update();
         }

@@ -43,6 +43,9 @@ namespace LudusSDK
     )]
     public sealed class LudusSdkConfig : ScriptableObject
     {
+        public const string DefaultApiBaseUrl =
+            "https://ludus-acompanha-api.onrender.com";
+
         [Header("Identificação do jogo")]
 
         [Tooltip("Identificador técnico legado. O Inspector usa Nome do jogo.")]
@@ -57,8 +60,8 @@ namespace LudusSDK
         [Header("Transporte")]
 
         [InspectorName("URL base do servidor (opcional)")]
-        [Tooltip("URL base da API. Deixe vazia quando o jogo apenas exportar JSON.")]
-        public string apiBaseUrl = "";
+        [Tooltip("Origem oficial da API LUDUS. Altere somente ao usar outro ambiente.")]
+        public string apiBaseUrl = DefaultApiBaseUrl;
 
         [InspectorName("Enviar automaticamente ao encerrar")]
         [Tooltip("Envia automaticamente a sessão quando ela for encerrada.")]
