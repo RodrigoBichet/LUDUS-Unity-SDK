@@ -6,6 +6,8 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 
 ### Adicionado
 
+- O README e o guia técnico mantêm a referência completa no GitHub, mas agora
+  destacam no início a documentação visual publicada no site LUDUS Acompanha.
 - Os links de instalação passam a acompanhar o branch `main` enquanto a próxima
   versão ainda não possui tag, e o README oferece também o download direto do
   ZIP para consulta ou instalação manual.

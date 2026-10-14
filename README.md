@@ -1,5 +1,8 @@
 # LUDUS Unity SDK
 
+> **Prefere acompanhar o passo a passo com imagens e uma navegação mais visual?**
+> Abra a [documentação do SDK no site LUDUS Acompanha](https://ludus-acompanha.netlify.app/documentacao).
+
 SDK plugável para registrar telemetria de jogos educacionais Unity e gerar
 sessões compatíveis com a plataforma **LUDUS Acompanha**.
 
