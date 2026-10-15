@@ -1,10 +1,24 @@
 # LUDUS Unity SDK
 
-> **Prefere acompanhar o passo a passo com imagens e uma navegação mais visual?**
-> Abra a [documentação do SDK no site LUDUS Acompanha](https://acompanha.maisludus.com.br/documentacao).
+O LUDUS funciona em duas partes que se complementam:
 
-SDK plugável para registrar telemetria de jogos educacionais Unity e gerar
-sessões compatíveis com a plataforma **LUDUS Acompanha**.
+1. o **LUDUS Unity SDK** é instalado dentro do projeto Unity e registra o que
+   acontece durante a jogada;
+2. o site **LUDUS Acompanha** recebe a sessão e organiza os registros no
+   Dashboard, facilitando a visualização de cliques, trajetórias, arrastes,
+   duração e outros dados que o jogo disponibilizar.
+
+```text
+Jogo Unity + SDK  →  sessão da jogada  →  LUDUS Acompanha  →  Dashboard
+```
+
+O primeiro teste não exige configurar manualmente cenas, componentes ou regras
+do jogo. Depois de instalar o pacote, use **LUDUS > Começar agora (modo
+simples)**, conecte o jogo a uma coleta de teste e já visualize o resultado no
+Dashboard.
+
+> **Prefere acompanhar com imagens e navegação visual?** Abra a
+> [documentação do SDK no site LUDUS Acompanha](https://acompanha.maisludus.com.br/documentacao).
 
 O LUDUS Acompanha oferece evidências parciais para acompanhamento e mediação
 docente. Ele não diagnostica, classifica clinicamente nem produz avaliação
@@ -13,10 +27,37 @@ conclusiva de aprendizagem.
 > Esta é uma versão de avaliação. Antes de qualquer coleta, valide a integração
 > com identidades fictícias, o fluxo do jogo e o build WebGL.
 
+## Avance por etapas e veja o resultado crescer
+
+### Etapa 1 — Conectar e visualizar
+
+Instale o SDK, conecte o jogo por nome e código, jogue, finalize a sessão e
+confira o resultado no Dashboard. O SDK registra automaticamente duração,
+cliques, trajetória do ponteiro e arrastes, sem exigir configuração manual na
+Unity.
+
+### Etapa 2 — Dar contexto ao mapa
+
+Acrescente uma captura visual para exibir cliques, movimentos e arrastes sobre
+a própria tela do jogo. Quando fizer sentido, escolha cenas específicas e
+organize os recortes apresentados no mapa.
+
+### Etapa 3 — Integrar regras do jogo
+
+Para uma sessão mais detalhada, conecte início e encerramento aos momentos reais
+da atividade e informe eventos que somente o jogo conhece, como acertos, erros,
+fases, alternativas e metas. O SDK não tenta inferir sozinho essas regras.
+
 ### Tutoriais em vídeo
 
 Os vídeos não possuem narração e podem ser pausados, avançados ou reproduzidos
 em outra velocidade pelo controle do navegador.
+
+[![Tutorial da Etapa 1: do pacote ao primeiro resultado no Dashboard](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-etapa-simples-capa.jpg)](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-etapa-simples.mp4)
+
+**Tutorial da Etapa 1:** instalação do pacote, ativação do modo simples,
+criação da coleta, conexão do jogo e visualização dos primeiros dados no
+Dashboard.
 
 [![Tutorial completo do SDK e do Dashboard](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-sdk-dashboard-capa.jpg)](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-sdk-dashboard.mp4)
 
@@ -41,17 +82,20 @@ e integração de uma mecânica de arraste avaliada por tag.
 A sequência completa, com instruções e ampliação de cada captura, permanece na
 [documentação visual do LUDUS Acompanha](https://acompanha.maisludus.com.br/documentacao).
 
-## Comece por aqui
+## Caminho recomendado
 
-O roteiro único de instalação, configuração, WebGL e importação no Dashboard
-está em [Guia de integração end to end](Documentation~/GUIA_INTEGRACAO_END_TO_END.md).
-Use esse documento para validar a experiência de uma pessoa desenvolvedora que
-está conhecendo o SDK pela primeira vez.
+Comece pela **Etapa 1** para obter rapidamente um resultado no Dashboard. A
+**Etapa 2** acrescenta contexto visual ao mapa e a **Etapa 3** permite informar
+dados que somente o jogo conhece. O
+[Guia de integração end to end](Documentation~/GUIA_INTEGRACAO_END_TO_END.md)
+permanece como referência detalhada para as etapas 2 e 3, incluindo o
+laboratório guiado, WebGL, eventos semânticos e validações adicionais.
 
 ## O que o SDK faz
 
 - inicia e encerra sessões no contrato LUDUS;
-- registra cliques e trajetória do mouse quando habilitados;
+- registra automaticamente cliques, trajetória do ponteiro e arrastes no modo
+  simples;
 - acompanha cenas automaticamente;
 - permite recortes extras por Canvas, painel ou atividade;
 - captura imagens JPEG opcionais para contextualizar o mapa de interações;
@@ -93,7 +137,9 @@ O pacote usa o novo Input System quando ele está presente no projeto e o Input
 clássico como alternativa. Não é necessário alterar `ProjectSettings` para a
 integração básica.
 
-## Instalação pelo GitHub
+## Etapa 1: conectar e visualizar no Dashboard
+
+### 1. Instale o pacote no projeto Unity
 
 No projeto Unity que receberá o SDK:
 
@@ -120,9 +166,64 @@ atualizações pelo Package Manager, prefira a URL Git acima.
 Se o repositório estiver privado, a conta GitHub configurada no computador deve
 ter acesso a ele. Não inclua tokens, senhas ou chaves em arquivos Unity.
 
-## Primeiro teste: tutorial isolado
+### 2. Ative o modo simples e abra o acesso
 
-Antes de tocar no jogo, crie uma cena de demonstração separada:
+Na Unity, abra a cena que é carregada primeiro quando a pessoa inicia o jogo —
+normalmente o menu ou a tela inicial — e execute:
+
+```text
+LUDUS > Começar agora (modo simples)
+```
+
+Salve a cena e pressione **Play**. Quando o modal pedir o nome e o código da
+coleta, mantenha-o aberto e siga para o próximo passo.
+
+### 3. Crie sua conta e uma coleta de teste
+
+Com o modal do jogo aberto, crie gratuitamente uma conta de desenvolvedor no
+[LUDUS Acompanha](https://acompanha.maisludus.com.br/inicio). Entre em
+**Laboratório > Coletas de teste**, crie uma coleta e copie o código temporário
+exibido.
+
+### 4. Conecte e jogue normalmente
+
+Volte à Unity. Para evitar confusão entre pessoas com o mesmo nome, informe
+também o sobrenome ou a inicial — como **“João Silva”** ou **“João S”** —,
+digite o código da coleta e clique em **Começar**. Após a mensagem de sucesso,
+o SDK estará conectado ao Dashboard. Jogue normalmente: a atividade será
+registrada automaticamente.
+
+### 5. Veja o resultado no Dashboard
+
+Abra a coleta no Dashboard e clique em **Ver dados recebidos**. Sessões
+concluídas oferecem **Ver dados do aluno**; se o jogo foi fechado antes da
+finalização, o último checkpoint pode ser aberto em **Ver progresso salvo**.
+
+O botão **L** pode ser reposicionado e redimensionado. Na Hierarchy, selecione
+o objeto `Abrir acesso` dentro da interface criada pelo modo simples, ajuste a
+posição e o tamanho e deixe-o do jeito que preferir na tela.
+No modo simples, ele aparece apenas na cena inicial de conexão. A coleta
+continua ativa nas demais cenas e o botão reaparece se o jogo voltar ao menu.
+
+O progresso parcial é verificado a cada 3 segundos e reenviado somente quando
+existirem novos dados. Pontos repetidos do mouse parado não são armazenados.
+
+Esse caminho já configura a base persistente, a conexão e o envio. Não crie
+outra base LUDUS e não adicione componentes manualmente antes de confirmar esse
+primeiro resultado.
+
+## Etapa 2: dar contexto visual ao mapa
+
+O mapa da Etapa 1 funciona sobre uma área neutra. Para exibir as interações
+sobre a imagem do jogo, selecione `LUDUS SDK — Modo simples`, abra a referência
+`ConfiguracaoLudus` no Inspector e, em **Capturas visuais**, habilite a captura
+da tela e a captura após a primeira interação. Faça outra jogada e compare a
+nova sessão no Dashboard. Use somente cenas e dados fictícios ou não sensíveis.
+
+## Tutoriais e laboratório guiado (opcional)
+
+Para conhecer configurações e interações adicionais sem alterar as cenas do
+jogo, crie uma demonstração separada:
 
 ```text
 LUDUS > Criar tutorial de teste do SDK
@@ -228,11 +329,15 @@ fictício e use somente um ambiente demonstrativo autorizado.
 > O painel do tutorial não é adicionado à integração real. Ele existe apenas
 > para aprender e validar o pacote sem poluir a interface do jogo.
 
-## Integração no jogo real
+## Etapa 3: integração detalhada no jogo
 
 ### 1. Adicione a base LUDUS
 
-Abra a cena inicial do jogo e use:
+Se você concluiu a Etapa 1, reutilize o GameObject
+`LUDUS SDK — Modo simples` e o asset criado em `Assets/LUDUS/`. Não execute
+outro comando de criação, pois deve existir somente uma base persistente.
+
+Se ainda não usou o modo simples, abra a cena inicial do jogo e use:
 
 ```text
 GameObject > LUDUS > Adicionar coleta ao meu jogo

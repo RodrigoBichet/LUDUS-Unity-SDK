@@ -14,6 +14,114 @@ namespace LudusSDK.Editor
         private const string TutorialScenePath =
             TutorialFolderPath + "/TutorialLudus.unity";
 
+        [MenuItem("LUDUS/Começar agora (modo simples)", false, 1)]
+        private static void CreateSimpleIntegration()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                EditorUtility.DisplayDialog(
+                    "LUDUS",
+                    "Abra a cena inicial do jogo antes de ativar o modo simples.",
+                    "Entendi"
+                );
+                return;
+            }
+
+            LudusSessionController existingController =
+                UnityEngine.Object.FindFirstObjectByType<
+                    LudusSessionController
+                >(FindObjectsInactive.Include);
+            if (existingController != null)
+            {
+                LudusCollectionAccessPanel existingAccessPanel =
+                    existingController.GetComponentInChildren<
+                        LudusCollectionAccessPanel
+                    >(true);
+                bool isSimpleBase = existingController.gameObject.name ==
+                    "LUDUS SDK — Modo simples" &&
+                    existingAccessPanel != null;
+
+                if (isSimpleBase)
+                {
+                    Undo.RecordObject(
+                        existingAccessPanel,
+                        "Atualizar modo simples LUDUS"
+                    );
+                    existingAccessPanel.ConfigureSimpleMode();
+                    EditorUtility.SetDirty(existingAccessPanel);
+
+                    if (existingController.Config != null)
+                    {
+                        Undo.RecordObject(
+                            existingController.Config,
+                            "Atualizar modo simples LUDUS"
+                        );
+                        existingController.Config.enableAutomaticCheckpoints = true;
+                        existingController.Config.checkpointIntervalSeconds = 3f;
+                        EditorUtility.SetDirty(existingController.Config);
+                    }
+
+                    EditorSceneManager.MarkSceneDirty(scene);
+                    AssetDatabase.SaveAssets();
+                }
+
+                Selection.activeGameObject = existingController.gameObject;
+                EditorGUIUtility.PingObject(existingController.gameObject);
+                EditorUtility.DisplayDialog(
+                    isSimpleBase
+                        ? "Modo simples atualizado"
+                        : "LUDUS já está no jogo",
+                    isSimpleBase
+                        ? "A base existente foi atualizada sem duplicação. O botão L ficará na cena inicial e o progresso parcial usará o intervalo de 3 segundos."
+                        : "Este projeto já possui uma base LUDUS. A base existente foi selecionada para evitar duplicação.",
+                    "Entendi"
+                );
+                return;
+            }
+
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName("Ativar modo simples LUDUS");
+
+            LudusSdkConfig config = CreateGameConfig();
+            config.sceneCaptureMode = LudusSceneCaptureMode.AllScenes;
+            config.ApplyDeliveryMode(LudusDeliveryMode.AutomaticDashboard);
+            config.enableAutomaticCheckpoints = true;
+            config.checkpointIntervalSeconds = 3f;
+            EditorUtility.SetDirty(config);
+
+            GameObject root = CreateConfiguredCaptureBase(config);
+            root.name = "LUDUS SDK — Modo simples";
+            LudusCollectionAccessPanel accessPanel =
+                LudusCollectionAccessSetup.CreateForSimpleMode(
+                    root.transform
+                );
+
+            if (accessPanel == null)
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(config));
+                Undo.CollapseUndoOperations(undoGroup);
+                return;
+            }
+
+            Undo.RegisterCreatedObjectUndo(
+                root,
+                "Ativar modo simples LUDUS"
+            );
+            Undo.CollapseUndoOperations(undoGroup);
+            AssetDatabase.SaveAssets();
+            EditorSceneManager.MarkSceneDirty(scene);
+
+            Selection.activeGameObject = root;
+            EditorGUIUtility.PingObject(root);
+            EditorUtility.DisplayDialog(
+                "Modo simples pronto",
+                "Pressione Play, informe um nome fictício e o código da coleta. A sessão começará automaticamente e cliques, movimentos e arrastes serão enviados ao Dashboard sem outras configurações na Unity.",
+                "Começar teste"
+            );
+        }
+
         [MenuItem("LUDUS/Criar tutorial de teste do SDK", false, 10)]
         private static void CreateTutorialScene()
         {
@@ -235,6 +343,13 @@ namespace LudusSDK.Editor
             );
             LudusSdkConfig config =
                 ScriptableObject.CreateInstance<LudusSdkConfig>();
+
+            config.gameName = string.IsNullOrWhiteSpace(
+                PlayerSettings.productName
+            )
+                ? "Jogo Unity"
+                : PlayerSettings.productName.Trim();
+            config.apiBaseUrl = LudusSdkConfig.DefaultApiBaseUrl;
 
             AssetDatabase.CreateAsset(config, assetPath);
             AssetDatabase.SaveAssets();

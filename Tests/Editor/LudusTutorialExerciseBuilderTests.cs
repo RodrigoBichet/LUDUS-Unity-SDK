@@ -1,7 +1,12 @@
 using System;
 using System.Reflection;
 using NUnit.Framework;
+using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace LudusSDK.Tests
 {
@@ -169,6 +174,103 @@ namespace LudusSDK.Tests
             AssertChildExists(root, "Painel do exercício/Faixa de destaque");
 
             UnityEngine.Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void ModoSimples_CriaFluxoObservacionalSemConfiguracaoManual()
+        {
+            EditorSceneManager.NewScene(
+                NewSceneSetup.EmptyScene,
+                NewSceneMode.Single
+            );
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameName = "Jogo de teste";
+
+            Type setupType = Type.GetType(
+                "LudusSDK.Editor.LudusSetupAssistant, Ludus.Unity.Editor"
+            );
+            MethodInfo createBase = setupType?.GetMethod(
+                "CreateConfiguredCaptureBase",
+                BindingFlags.Static | BindingFlags.NonPublic
+            );
+            Assert.That(setupType, Is.Not.Null);
+            Assert.That(createBase, Is.Not.Null);
+
+            GameObject root = (GameObject)createBase.Invoke(
+                null,
+                new object[] { config }
+            );
+
+            Type accessSetupType = Type.GetType(
+                "LudusSDK.Editor.LudusCollectionAccessSetup, Ludus.Unity.Editor"
+            );
+            MethodInfo createAccess = accessSetupType?.GetMethod(
+                "CreateForSimpleMode",
+                BindingFlags.Static |
+                    BindingFlags.NonPublic |
+                    BindingFlags.Public
+            );
+            Assert.That(accessSetupType, Is.Not.Null);
+            Assert.That(createAccess, Is.Not.Null);
+
+            LudusCollectionAccessPanel panel =
+                (LudusCollectionAccessPanel)createAccess.Invoke(
+                    null,
+                    new object[] { root.transform }
+                );
+
+            LudusSessionController controller =
+                root.GetComponent<LudusSessionController>();
+            Assert.That(controller, Is.Not.Null);
+            Assert.That(controller.Config, Is.SameAs(config));
+            Assert.That(controller.persistAcrossScenes, Is.True);
+            Assert.That(root.GetComponent<LudusSessionExporter>(), Is.Not.Null);
+            Assert.That(
+                root.GetComponent<LudusSceneCaptureCoordinator>(),
+                Is.Not.Null
+            );
+
+            Assert.That(panel, Is.Not.Null);
+            Canvas canvas = root.GetComponentInChildren<Canvas>(true);
+            Assert.That(canvas, Is.Not.Null);
+            Assert.That(canvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceOverlay));
+            Assert.That(canvas.sortingOrder, Is.EqualTo(short.MaxValue));
+            Assert.That(
+                root.GetComponentInChildren<EventSystem>(true),
+                Is.Not.Null
+            );
+
+            SerializedObject serializedPanel = new SerializedObject(panel);
+            Assert.That(
+                serializedPanel.FindProperty("hideModalOnStart").boolValue,
+                Is.False
+            );
+            Assert.That(
+                serializedPanel.FindProperty(
+                    "startSessionAfterConnection"
+                ).boolValue,
+                Is.True
+            );
+            Assert.That(
+                serializedPanel.FindProperty(
+                    "finishSessionFromConnectedView"
+                ).boolValue,
+                Is.True
+            );
+            Assert.That(
+                serializedPanel.FindProperty(
+                    "ensureEventSystemAcrossScenes"
+                ).boolValue,
+                Is.True
+            );
+            Assert.That(
+                config.apiBaseUrl,
+                Is.EqualTo(LudusSdkConfig.DefaultApiBaseUrl)
+            );
+
+            UnityEngine.Object.DestroyImmediate(root);
+            UnityEngine.Object.DestroyImmediate(config);
         }
 
         private static Transform AssertChildExists(

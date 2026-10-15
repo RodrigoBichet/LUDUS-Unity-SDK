@@ -18,6 +18,7 @@ namespace LudusSDK
         private float nextCheckpointAt;
         private string checkpointSessionId = string.Empty;
         private string checkpointKey = string.Empty;
+        private string lastCheckpointSignature = string.Empty;
 
         private void OnEnable()
         {
@@ -46,7 +47,7 @@ namespace LudusSDK
             }
 
             nextCheckpointAt = Time.unscaledTime + Mathf.Max(
-                5f,
+                3f,
                 sessionController.Config.checkpointIntervalSeconds
             );
 
@@ -59,6 +60,16 @@ namespace LudusSDK
             )
             {
                 Log(sessionController.Config, errorMessage);
+                return;
+            }
+
+            string checkpointSignature = BuildCheckpointSignature(snapshot);
+            if (string.Equals(
+                checkpointSignature,
+                lastCheckpointSignature,
+                StringComparison.Ordinal
+            ))
+            {
                 return;
             }
 
@@ -77,7 +88,9 @@ namespace LudusSDK
                 return;
             }
 
-            StartCoroutine(SendCheckpoint(snapshot, json));
+            StartCoroutine(
+                SendCheckpoint(snapshot, json, checkpointSignature)
+            );
         }
 
         private void OnValidate()
@@ -249,7 +262,8 @@ namespace LudusSDK
 
         private IEnumerator SendCheckpoint(
             LudusSession session,
-            string json
+            string json,
+            string checkpointSignature
         )
         {
             LudusSdkConfig config = sessionController.Config;
@@ -307,6 +321,7 @@ namespace LudusSDK
 
                 if (request.result == UnityWebRequest.Result.Success)
                 {
+                    lastCheckpointSignature = checkpointSignature;
                     Log(
                         config,
                         "Progresso parcial salvo: " + session.sessionId
@@ -323,6 +338,18 @@ namespace LudusSDK
             }
 
             checkpointRequestInProgress = false;
+        }
+
+        private static string BuildCheckpointSignature(LudusSession session)
+        {
+            return string.Join(
+                ":",
+                session.sessionId,
+                session.clicks.Count,
+                session.mousePath.Count,
+                session.dragPath.Count,
+                session.gameEvents.Count
+            );
         }
 
         private string GetCheckpointKey(string sessionId)
@@ -359,6 +386,7 @@ namespace LudusSDK
 
             checkpointSessionId = string.Empty;
             checkpointKey = string.Empty;
+            lastCheckpointSignature = string.Empty;
         }
 
         private static void SaveFallbackIfEnabled(

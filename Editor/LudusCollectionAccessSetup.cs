@@ -22,6 +22,21 @@ namespace LudusSDK.Editor
         )]
         private static void CreateCollectionAccess()
         {
+            CreateCollectionAccess(null, false);
+        }
+
+        internal static LudusCollectionAccessPanel CreateForSimpleMode(
+            Transform persistentRoot
+        )
+        {
+            return CreateCollectionAccess(persistentRoot, true);
+        }
+
+        private static LudusCollectionAccessPanel CreateCollectionAccess(
+            Transform persistentRoot,
+            bool simpleMode
+        )
+        {
             Scene scene = SceneManager.GetActiveScene();
             if (!scene.IsValid() || !scene.isLoaded)
             {
@@ -30,7 +45,7 @@ namespace LudusSDK.Editor
                     "Abra a cena de menu do jogo antes de criar o acesso à coleta.",
                     "Entendi"
                 );
-                return;
+                return null;
             }
 
             if (
@@ -44,17 +59,21 @@ namespace LudusSDK.Editor
                     "Esta cena já possui um acesso por nome e código.",
                     "Entendi"
                 );
-                return;
+                return null;
             }
 
             int undoGroup = Undo.GetCurrentGroup();
             Undo.SetCurrentGroupName("Criar acesso à coleta LUDUS");
 
-            EnsureEventSystem();
+            EnsureEventSystem(simpleMode ? persistentRoot : null);
+
+            Transform accessParent = simpleMode
+                ? CreateOverlayCanvas(persistentRoot).transform
+                : null;
 
             GameObject root = CreateUiObject(
                 "LUDUS — Acesso à coleta",
-                null
+                accessParent
             );
             LudusCollectionAccessPanel accessPanel =
                 root.AddComponent<LudusCollectionAccessPanel>();
@@ -188,31 +207,73 @@ namespace LudusSDK.Editor
                 status,
                 openButtonLabel
             );
-            accessPanel.ConfigureAutomaticSessionStart(
-                UnityEngine.Object.FindFirstObjectByType<
-                    LudusTutorialScenarioNavigator
-                >() != null
-            );
+            if (simpleMode)
+            {
+                accessPanel.ConfigureSimpleMode();
+            }
+            else
+            {
+                accessPanel.ConfigureAutomaticSessionStart(
+                    UnityEngine.Object.FindFirstObjectByType<
+                        LudusTutorialScenarioNavigator
+                    >() != null
+                );
+            }
             accessPanel.EnsureStatusIndicator();
             modal.SetActive(false);
 
-            Undo.RegisterCreatedObjectUndo(
-                root,
-                "Criar acesso à coleta LUDUS"
-            );
+            if (!simpleMode)
+            {
+                Undo.RegisterCreatedObjectUndo(
+                    root,
+                    "Criar acesso à coleta LUDUS"
+                );
+            }
             Undo.CollapseUndoOperations(undoGroup);
             EditorSceneManager.MarkSceneDirty(scene);
             Selection.activeGameObject = root;
             EditorGUIUtility.PingObject(root);
 
-            EditorUtility.DisplayDialog(
-                "Acesso à coleta criado",
-                "Na cena principal, arraste “LUDUS — Acesso à coleta” para o Canvas em que o usuário fará a conexão com o Dashboard. Depois, posicione “Abrir acesso” onde preferir.",
-                "Entendi"
-            );
+            if (!simpleMode)
+            {
+                EditorUtility.DisplayDialog(
+                    "Acesso à coleta criado",
+                    "Na cena principal, arraste “LUDUS — Acesso à coleta” para o Canvas em que o usuário fará a conexão com o Dashboard. Depois, posicione “Abrir acesso” onde preferir.",
+                    "Entendi"
+                );
+            }
+
+            return accessPanel;
         }
 
-        private static void EnsureEventSystem()
+        private static GameObject CreateOverlayCanvas(
+            Transform persistentRoot
+        )
+        {
+            GameObject canvasObject = new GameObject(
+                "LUDUS — Interface simples",
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster)
+            );
+            if (persistentRoot != null)
+            {
+                canvasObject.transform.SetParent(persistentRoot, false);
+            }
+
+            Canvas canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = short.MaxValue;
+
+            CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+            return canvasObject;
+        }
+
+        private static void EnsureEventSystem(Transform persistentRoot)
         {
             if (UnityEngine.Object.FindFirstObjectByType<EventSystem>() != null)
             {
@@ -220,7 +281,9 @@ namespace LudusSDK.Editor
             }
 
             GameObject eventSystemObject = new GameObject(
-                "EventSystem",
+                persistentRoot == null
+                    ? "EventSystem"
+                    : "LUDUS — EventSystem",
                 typeof(EventSystem)
             );
             Type inputSystemModule = Type.GetType(
@@ -233,6 +296,13 @@ namespace LudusSDK.Editor
             else
             {
                 eventSystemObject.AddComponent<StandaloneInputModule>();
+            }
+            if (persistentRoot != null)
+            {
+                eventSystemObject.transform.SetParent(
+                    persistentRoot,
+                    false
+                );
             }
             Undo.RegisterCreatedObjectUndo(
                 eventSystemObject,

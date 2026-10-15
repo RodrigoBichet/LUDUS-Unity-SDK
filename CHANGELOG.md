@@ -6,6 +6,14 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 
 ### Adicionado
 
+- O modo simples mantém o botão L somente na cena inicial de conexão; a sessão
+  e os coletores continuam ativos nas demais cenas, e o botão reaparece ao
+  retornar ao menu.
+- O pareamento passa a orientar o uso de nome e sobrenome, preservando aliases
+  fictícios numerados já usados pelo laboratório.
+- Checkpoints automáticos usam intervalo mínimo de 3 segundos e só são
+  reenviados quando a telemetria muda; o rastreamento do ponteiro deixa de
+  acumular amostras repetidas enquanto ele permanece parado.
 - O README e o guia técnico mantêm a referência completa no GitHub, mas agora
   destacam no início a documentação visual publicada no site LUDUS Acompanha.
 - Os links de instalação passam a acompanhar o branch `main` enquanto a próxima

@@ -1,8 +1,11 @@
 using System;
 using System.Collections;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace LudusSDK
@@ -36,9 +39,15 @@ namespace LudusSDK
         [SerializeField] private bool hideModalOnStart = true;
         [SerializeField] private bool hideOpenButtonAfterConnection;
         [SerializeField] private bool startSessionAfterConnection;
+        [SerializeField] private bool finishSessionFromConnectedView;
+        [SerializeField] private bool ensureEventSystemAcrossScenes;
+        [SerializeField] private bool showOpenButtonOnlyInConnectionScene;
 
         private bool requestInProgress;
+        private bool connectionJustCompleted;
         private string connectedStatusMessage = string.Empty;
+        private EventSystem runtimeEventSystem;
+        private string connectionScenePath = string.Empty;
 
         private static readonly Color BadgeDisconnectedColor =
             new Color32(205, 52, 69, 255);
@@ -52,6 +61,16 @@ namespace LudusSDK
         public void ConfigureAutomaticSessionStart(bool enabled)
         {
             startSessionAfterConnection = enabled;
+        }
+
+        public void ConfigureSimpleMode()
+        {
+            hideModalOnStart = false;
+            hideOpenButtonAfterConnection = false;
+            startSessionAfterConnection = true;
+            finishSessionFromConnectedView = true;
+            ensureEventSystemAcrossScenes = true;
+            showOpenButtonOnlyInConnectionScene = true;
         }
 
         private void OnTransformParentChanged()
@@ -193,12 +212,15 @@ namespace LudusSDK
                 return;
             }
 
+            connectionScenePath = SceneManager.GetActiveScene().path;
+
             RefreshConnectionVisualState();
 
-            if (hideModalOnStart && modalRoot != null)
+            if (modalRoot != null)
             {
-                modalRoot.SetActive(false);
+                modalRoot.SetActive(!hideModalOnStart);
             }
+            UpdateAccessVisibility(SceneManager.GetActiveScene());
         }
 
         private void OnEnable()
@@ -214,6 +236,11 @@ namespace LudusSDK
             openButton?.onClick.AddListener(Open);
             connectButton?.onClick.AddListener(Connect);
             cancelButton?.onClick.AddListener(Close);
+            if (ensureEventSystemAcrossScenes)
+            {
+                SceneManager.sceneLoaded += HandleSceneLoaded;
+                EnsureRuntimeEventSystem();
+            }
         }
 
         private void OnDisable()
@@ -226,6 +253,7 @@ namespace LudusSDK
             openButton?.onClick.RemoveListener(Open);
             connectButton?.onClick.RemoveListener(Connect);
             cancelButton?.onClick.RemoveListener(Close);
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
         }
 
         public void Open()
@@ -243,6 +271,19 @@ namespace LudusSDK
                 )
             )
             {
+                connectionJustCompleted = false;
+                if (
+                    finishSessionFromConnectedView &&
+                    LudusSdk.TryGetSingleSessionController(
+                        out LudusSessionController controller,
+                        out _
+                    ) &&
+                    !controller.HasActiveSession
+                )
+                {
+                    ApplyFinishedView();
+                    return;
+                }
                 string message = string.IsNullOrWhiteSpace(
                     connectedStatusMessage
                 )
@@ -273,7 +314,7 @@ namespace LudusSDK
 
             if (LudusCollectionContext.TryGet(out _, out _))
             {
-                Close();
+                HandleConnectedAction();
                 return;
             }
 
@@ -284,9 +325,11 @@ namespace LudusSDK
                 ? string.Empty
                 : collectionCodeInput.text.Trim();
 
-            if (participantName.Length < 2)
+            if (!HasEnoughNameParts(participantName))
             {
-                ApplyErrorView("Informe o nome do participante.");
+                ApplyErrorView(
+                    "Informe nome e sobrenome, como \"João Silva\" ou \"João S\"."
+                );
                 return;
             }
             if (string.IsNullOrWhiteSpace(code))
@@ -319,6 +362,171 @@ namespace LudusSDK
                     code
                 )
             );
+        }
+
+        private void HandleConnectedAction()
+        {
+            if (!finishSessionFromConnectedView)
+            {
+                Close();
+                return;
+            }
+
+            if (connectionJustCompleted)
+            {
+                connectionJustCompleted = false;
+                Close();
+                return;
+            }
+
+            if (
+                !LudusSdk.TryGetSingleSessionController(
+                    out LudusSessionController controller,
+                    out string controllerError
+                )
+            )
+            {
+                ApplyErrorView(controllerError);
+                return;
+            }
+
+            if (controller.HasActiveSession)
+            {
+                if (!LudusSdk.TryEndSession(out _, out string endError))
+                {
+                    ApplyErrorView(endError);
+                    return;
+                }
+
+                ApplyFinishedView();
+                return;
+            }
+
+            if (!LudusCollectionContext.TryGet(
+                out LudusCollectionConnection connection,
+                out string connectionError
+            ))
+            {
+                ApplyErrorView(connectionError);
+                return;
+            }
+            if (!LudusSdk.TryStartSession(
+                LudusSdk.StudentIdPendingManualImport,
+                connection.DisplayName,
+                out string startError
+            ))
+            {
+                ApplyErrorView(startError);
+                return;
+            }
+
+            connectionJustCompleted = true;
+            string message = string.IsNullOrWhiteSpace(connectedStatusMessage)
+                ? "Nova sessão iniciada como " + connection.DisplayName + "."
+                : connectedStatusMessage;
+            ApplyConnectedView(message);
+        }
+
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            EnsureRuntimeEventSystem();
+            UpdateAccessVisibility(scene);
+        }
+
+        private void UpdateAccessVisibility(Scene scene)
+        {
+            if (!showOpenButtonOnlyInConnectionScene || openButton == null)
+            {
+                return;
+            }
+
+            bool isConnectionScene = string.Equals(
+                scene.path,
+                connectionScenePath,
+                StringComparison.Ordinal
+            );
+            openButton.gameObject.SetActive(isConnectionScene);
+            if (!isConnectionScene && modalRoot != null)
+            {
+                modalRoot.SetActive(false);
+            }
+        }
+
+        private static bool HasEnoughNameParts(string participantName)
+        {
+            return Regex.IsMatch(
+                participantName ?? string.Empty,
+                @"^\p{L}[\p{L}'’.-]*(?:\s+[\p{L}\p{N}][\p{L}\p{N}'’.-]*)+$"
+            );
+        }
+
+        private void EnsureRuntimeEventSystem()
+        {
+            if (!Application.isPlaying || !ensureEventSystemAcrossScenes)
+            {
+                return;
+            }
+
+            EventSystem[] eventSystems = FindObjectsByType<EventSystem>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None
+            );
+            LudusSessionController controller =
+                GetComponentInParent<LudusSessionController>();
+            if (runtimeEventSystem == null && controller != null)
+            {
+                foreach (EventSystem eventSystem in eventSystems)
+                {
+                    if (eventSystem.transform.IsChildOf(controller.transform))
+                    {
+                        runtimeEventSystem = eventSystem;
+                        break;
+                    }
+                }
+            }
+            foreach (EventSystem eventSystem in eventSystems)
+            {
+                if (eventSystem != runtimeEventSystem)
+                {
+                    if (runtimeEventSystem != null)
+                    {
+                        Destroy(runtimeEventSystem.gameObject);
+                        runtimeEventSystem = null;
+                    }
+                    return;
+                }
+            }
+
+            if (runtimeEventSystem != null)
+            {
+                return;
+            }
+
+            GameObject eventSystemObject = new GameObject(
+                "LUDUS — EventSystem",
+                typeof(EventSystem)
+            );
+            eventSystemObject.transform.SetParent(
+                controller == null ? transform : controller.transform,
+                false
+            );
+
+#if ENABLE_INPUT_SYSTEM
+            Type inputSystemModuleType = Type.GetType(
+                "UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem"
+            );
+            if (inputSystemModuleType != null)
+            {
+                eventSystemObject.AddComponent(inputSystemModuleType);
+            }
+#endif
+#if ENABLE_LEGACY_INPUT_MANAGER
+            if (eventSystemObject.GetComponent<BaseInputModule>() == null)
+            {
+                eventSystemObject.AddComponent<StandaloneInputModule>();
+            }
+#endif
+            runtimeEventSystem = eventSystemObject.GetComponent<EventSystem>();
         }
 
         private IEnumerator Pair(
@@ -442,6 +650,7 @@ namespace LudusSDK
                 connectedStatusMessage =
                     "Conectado à coleta “" + response.coleta.title +
                     "” como " + displayName + ".";
+                connectionJustCompleted = finishSessionFromConnectedView;
                 ApplyConnectedView(connectedStatusMessage);
                 if (
                     openButtonText != null &&
@@ -570,6 +779,7 @@ namespace LudusSDK
         {
             SetFormVisible(true);
             SetButtonText(connectButtonText, "Entrar");
+            SetButtonText(cancelButtonText, "Voltar");
             SetStatus(string.Empty, false);
             SetConnectionBadge("×", BadgeDisconnectedColor);
         }
@@ -585,9 +795,40 @@ namespace LudusSDK
         private void ApplyConnectedView(string message)
         {
             SetFormVisible(false);
-            SetButtonText(connectButtonText, "Confirmar");
+            SetButtonText(
+                connectButtonText,
+                finishSessionFromConnectedView
+                    ? connectionJustCompleted
+                        ? "Começar"
+                        : "Finalizar e enviar"
+                    : "Confirmar"
+            );
+            SetSimpleCloseActionVisible();
             SetStatus(message, false);
             SetConnectionBadge("✓", BadgeConnectedColor);
+        }
+
+        private void ApplyFinishedView()
+        {
+            SetFormVisible(false);
+            SetButtonText(connectButtonText, "Iniciar nova sessão");
+            SetSimpleCloseActionVisible();
+            SetStatus(
+                "Sessão finalizada. O envio ao Dashboard foi iniciado.",
+                false
+            );
+            SetConnectionBadge("✓", BadgeConnectedColor);
+        }
+
+        private void SetSimpleCloseActionVisible()
+        {
+            if (!finishSessionFromConnectedView || cancelButton == null)
+            {
+                return;
+            }
+
+            cancelButton.gameObject.SetActive(true);
+            SetButtonText(cancelButtonText, "Fechar");
         }
 
         private void SetFormVisible(bool visible)

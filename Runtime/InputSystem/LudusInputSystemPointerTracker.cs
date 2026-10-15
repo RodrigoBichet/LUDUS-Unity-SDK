@@ -24,6 +24,8 @@ namespace LudusSDK
         private float nextDragSampleAt;
         private bool warnedAboutUnavailablePointer;
         private bool receivedInputSystemPointer;
+        private bool hasLastInputSystemPointerPosition;
+        private Vector2 lastInputSystemPointerPosition;
         private bool hasLastFallbackPointerPosition;
         private Vector2 lastFallbackPointerPosition;
         private bool isDragging;
@@ -61,6 +63,7 @@ namespace LudusSDK
             nextDragSampleAt = 0f;
             warnedAboutUnavailablePointer = false;
             receivedInputSystemPointer = false;
+            hasLastInputSystemPointerPosition = false;
             hasLastFallbackPointerPosition = false;
             isDragging = false;
             hasRecordedDragStart = false;
@@ -99,9 +102,13 @@ namespace LudusSDK
                 return;
             }
 
-            if (captureMousePath && Time.unscaledTime >= nextMouseSampleAt)
+            if (captureMousePath && Time.unscaledTime >= nextMouseSampleAt &&
+                (!hasLastInputSystemPointerPosition ||
+                    (position - lastInputSystemPointerPosition).sqrMagnitude >= 1f))
             {
                 sessionController.TryRecordMousePoint(position, out _);
+                lastInputSystemPointerPosition = position;
+                hasLastInputSystemPointerPosition = true;
                 nextMouseSampleAt = Time.unscaledTime +
                     Mathf.Max(10, mouseSampleIntervalMs) / 1000f;
             }

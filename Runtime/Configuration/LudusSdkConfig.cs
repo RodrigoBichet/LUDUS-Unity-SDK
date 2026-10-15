@@ -44,7 +44,7 @@ namespace LudusSDK
     public sealed class LudusSdkConfig : ScriptableObject
     {
         public const string DefaultApiBaseUrl =
-            "https://ludus-acompanha-api.onrender.com";
+            "https://acompanha.maisludus.com.br";
 
         [Header("Identificação do jogo")]
 
@@ -76,8 +76,8 @@ namespace LudusSDK
 
         [InspectorName("Intervalo do progresso parcial (segundos)")]
         [Tooltip("Intervalo entre fotografias parciais. Valores menores aumentam o tráfego de rede.")]
-        [Range(5f, 300f)]
-        public float checkpointIntervalSeconds = 15f;
+        [Range(3f, 300f)]
+        public float checkpointIntervalSeconds = 3f;
 
         [Header("Importação manual")]
 

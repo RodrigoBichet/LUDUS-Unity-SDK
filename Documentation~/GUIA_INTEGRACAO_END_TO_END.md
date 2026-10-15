@@ -1,16 +1,23 @@
-# Guia definitivo: integrar o LUDUS Unity SDK do zero ao Dashboard
+# Guia detalhado: personalizar a integração do LUDUS Unity SDK
 
 > **Veja este conteúdo com uma apresentação mais visual:** acesse a
 > [documentação do SDK no site LUDUS Acompanha](https://acompanha.maisludus.com.br/documentacao).
 
-Se preferir acompanhar uma execução completa antes de começar, assista ao
+Para obter o primeiro resultado, comece pela **Etapa 1** do
+[README](../README.md) ou da documentação visual. Este guia é a referência
+detalhada para quem já conseguiu enviar uma sessão básica e deseja explorar os
+detalhes das etapas 2 e 3.
+
+Se preferir acompanhar a primeira integração em vídeo, veja o
+[Tutorial da Etapa 1: do pacote ao primeiro resultado no Dashboard](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-etapa-simples.mp4).
+
+Se preferir acompanhar uma execução completa, assista ao
 [tutorial do SDK e do Dashboard](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-sdk-dashboard.mp4).
 Para ver a mesma integração aplicada a um jogo existente, assista à
 [aplicação no jogo Para Que Serve?](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-sdk-para-que-serve.mp4).
 
-Este é o roteiro principal para uma pessoa desenvolvedora integrar o SDK em um
-jogo Unity. Faça primeiro com um projeto ou cópia de teste e use somente nomes
-fictícios. Não use dados reais, credenciais, JWT ou a base produtiva.
+Faça os testes com um projeto ou cópia de teste e use somente nomes fictícios.
+Não use dados reais, credenciais ou JWT.
 
 O roteiro considera um jogo **Unity 6, 2D e WebGL**. Ele também serve para
 projetos que usam várias cenas, UI do Canvas, objetos 2D no mundo ou uma mistura
@@ -38,14 +45,17 @@ explicitamente.
 
 ## Resultado esperado
 
-Ao terminar, o jogo deverá:
+Na Etapa 1, o jogo deverá registrar automaticamente duração, cliques,
+trajetória do ponteiro e arrastes, encerrar a sessão pelo botão do SDK e enviá-la
+ao Dashboard.
 
-1. iniciar uma sessão LUDUS conscientemente;
-2. registrar somente as capacidades habilitadas;
-3. encerrar a sessão e enviá-la automaticamente ou exportar um JSON, conforme
+Nas etapas 2 e 3, a integração também poderá:
+
+1. escolher cenas, interações e capacidades específicas;
+2. iniciar e encerrar a sessão em momentos definidos pelo próprio jogo;
+3. enviar automaticamente ou exportar um JSON, conforme
    o destino escolhido;
-4. conferir a sessão recebida ou importar o JSON no LUDUS Acompanha;
-5. exibir a sessão e o mapa de interações no Dashboard.
+4. informar acertos, erros, fases, categorias e outros eventos semânticos.
 
 Acertos, erros, fases, categorias e objetivos pedagógicos só são registrados
 quando o próprio jogo os informa pela API ou pela ponte semântica visual. Sem
@@ -54,16 +64,27 @@ interações observáveis descritas neste guia.
 
 ### Caminho mínimo
 
-Se você já conhece Unity, o fluxo completo pode ser resumido assim:
+O primeiro resultado pode ser obtido assim:
 
 1. instalar o pacote pelo Package Manager;
-2. executar o tutorial isolado;
-3. adicionar uma única base LUDUS à primeira cena do jogo;
-4. configurar cenas e capacidades no asset criado em `Assets/LUDUS/`;
-5. ligar o início e o encerramento da sessão ao fluxo real do jogo;
-6. opcionalmente marcar botões, campos e objetos relevantes;
-7. testar no Editor e depois em um build WebGL;
-8. importar o JSON no LUDUS Acompanha.
+2. executar **LUDUS > Começar agora (modo simples)** na cena inicial, salvar a
+   cena e pressionar **Play** até o modal solicitar nome e código;
+3. com o modal aberto, criar uma conta de desenvolvedor e uma coleta fictícia
+   no LUDUS Acompanha;
+4. conectar por nome e código e jogar normalmente;
+5. abrir **Ver dados recebidos** no Dashboard e acessar o histórico concluído
+   ou o último progresso parcial preservado.
+
+Use pelo menos nome e sobrenome ou nome e inicial do sobrenome, como
+`“João Silva”` ou `“João S”`. No modo simples, o botão de acesso aparece somente
+na cena inicial; a coleta permanece ativa durante as trocas de cena.
+
+## Etapas 2 e 3: referência detalhada
+
+As seções seguintes apresentam o laboratório guiado e as configurações
+opcionais. A Etapa 2 acrescenta contexto visual ao mapa; a Etapa 3 integra
+eventos que somente o jogo conhece. O laboratório completo permanece como uma
+referência opcional para quem quiser explorar todas as possibilidades.
 
 ## 1. Preparar o ambiente
 
@@ -75,8 +96,8 @@ Se você já conhece Unity, o fluxo completo pode ser resumido assim:
 - Trabalhe em uma cópia limpa ou branch de integração do jogo.
 - Confirme que o projeto abre e executa antes de instalar o SDK.
 - Confirme que todas as cenas usadas estão no **Build Profile** do projeto.
-- Para o primeiro teste, não configure API de produção. Use download manual do
-  JSON e um ambiente de Dashboard com banco temporário ou demonstrativo.
+- Use uma coleta fictícia no Laboratório do LUDUS Acompanha ou um ambiente
+  local demonstrativo. Não misture o teste com dados reais.
 
 ## 2. Instalar o pacote
 
@@ -96,9 +117,9 @@ Na Unity:
 Se o repositório estiver privado, o computador precisa ter acesso ao GitHub.
 Nunca coloque token ou senha em cenas, scripts ou arquivos versionados.
 
-## 3. Fazer o teste isolado recomendado
+## 3. Explorar o laboratório guiado opcional
 
-Antes de mexer no jogo real:
+Se quiser conhecer as configurações intermediárias em uma cena separada:
 
 1. Abra **LUDUS > Criar tutorial de teste do SDK**.
 2. Confirme a criação dos arquivos em `Assets/LUDUS/Tutorial/`.
@@ -401,9 +422,11 @@ no jogo integrado:
 9. após a conexão, percorra o tutorial. Ao abrir **Tutorial concluído**, a
    sessão é encerrada e enviada automaticamente; o painel manual não precisa
    ser exibido;
-10. em **Coletas de teste**, abra **Ver recebimentos**, revise o participante,
-    associe-o a um cadastro existente ou crie o novo aluno e então adicione as
-    sessões ao histórico;
+10. em **Coletas de teste**, abra **Ver dados recebidos**. No laboratório
+    fictício, o participante novo é criado automaticamente e a sessão concluída
+    oferece **Ver dados do aluno**. Se o Dashboard solicitar revisão manual —
+    como em uma escola real ou diante de homônimos — confirme o cadastro correto
+    antes de adicionar as sessões ao histórico;
 11. opcionalmente, faça um **Build And Run** WebGL e repita o teste. Para também
     baixar o JSON, escolha antes **Desenvolvimento: enviar e também baixar**.
 
@@ -462,6 +485,12 @@ Dashboard e seus registros forem compreendidos. Ele é material de laboratório:
 depois da validação, não inclua `TutorialLudus` no build final do jogo.
 
 ## 4. Adicionar o coletor ao jogo
+
+Se você concluiu a Etapa 1, reutilize o objeto
+**LUDUS SDK — Modo simples** e pule diretamente para a seção 4.1. Não crie uma
+segunda base.
+
+Se ainda não usou o modo simples:
 
 1. Abra a primeira cena carregada pelo jogo ou outra cena inicial estável.
 2. Use **GameObject > LUDUS > Adicionar coleta ao meu jogo**.

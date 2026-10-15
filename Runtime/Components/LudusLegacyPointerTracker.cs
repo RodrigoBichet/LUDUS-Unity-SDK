@@ -24,6 +24,8 @@ namespace LudusSDK
         public int mouseSampleIntervalMs = 50;
 
         private float nextMouseSampleAt;
+        private bool hasLastMousePosition;
+        private Vector2 lastMousePosition;
         private float nextDragSampleAt;
         private bool isDragging;
         private bool hasRecordedDragStart;
@@ -32,6 +34,7 @@ namespace LudusSDK
         private void OnEnable()
         {
             nextMouseSampleAt = 0f;
+            hasLastMousePosition = false;
             nextDragSampleAt = 0f;
             isDragging = false;
             hasRecordedDragStart = false;
@@ -54,13 +57,17 @@ namespace LudusSDK
 
                 if (
                     captureMousePath &&
-                    Time.unscaledTime >= nextMouseSampleAt
+                    Time.unscaledTime >= nextMouseSampleAt &&
+                    (!hasLastMousePosition ||
+                        (pointerPosition - lastMousePosition).sqrMagnitude >= 1f)
                 )
                 {
                     sessionController.TryRecordMousePoint(
                         pointerPosition,
                         out _
                     );
+                    lastMousePosition = pointerPosition;
+                    hasLastMousePosition = true;
 
                     nextMouseSampleAt = Time.unscaledTime +
                         Mathf.Max(10, mouseSampleIntervalMs) / 1000f;
