@@ -1,7 +1,7 @@
 # LUDUS Unity SDK
 
 > **Prefere acompanhar o passo a passo com imagens e uma navegação mais visual?**
-> Abra a [documentação do SDK no site LUDUS Acompanha](https://ludus-acompanha.netlify.app/documentacao).
+> Abra a [documentação do SDK no site LUDUS Acompanha](https://acompanha.maisludus.com.br/documentacao).
 
 SDK plugável para registrar telemetria de jogos educacionais Unity e gerar
 sessões compatíveis com a plataforma **LUDUS Acompanha**.
@@ -12,6 +12,34 @@ conclusiva de aprendizagem.
 
 > Esta é uma versão de avaliação. Antes de qualquer coleta, valide a integração
 > com identidades fictícias, o fluxo do jogo e o build WebGL.
+
+### Tutoriais em vídeo
+
+Os vídeos não possuem narração e podem ser pausados, avançados ou reproduzidos
+em outra velocidade pelo controle do navegador.
+
+[![Tutorial completo do SDK e do Dashboard](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-sdk-dashboard-capa.jpg)](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-sdk-dashboard.mp4)
+
+**Tutorial completo do SDK e do Dashboard:** instalação, configuração,
+pareamento por nome e código e conferência da sessão recebida.
+
+[![Aplicação do SDK no jogo Para Que Serve?](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-sdk-para-que-serve-capa.jpg)](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-sdk-para-que-serve.mp4)
+
+**Aplicação no jogo Para Que Serve?:** acompanhamento somente da cena `Fase00`
+e integração de uma mecânica de arraste avaliada por tag.
+
+### Resumo visual da integração
+
+| 1. Instalar o pacote | 2. Preparar as interações |
+|---|---|
+| [![SDK instalado no Package Manager](https://acompanha.maisludus.com.br/documentacao/package-manager/03-sdk-instalado.png)](https://acompanha.maisludus.com.br/documentacao/package-manager/03-sdk-instalado.png) | [![Objetos preparados na Hierarchy](https://acompanha.maisludus.com.br/documentacao/interacoes/01-objetos-hierarchy.png)](https://acompanha.maisludus.com.br/documentacao/interacoes/01-objetos-hierarchy.png) |
+
+| 3. Conectar nome e código | 4. Conferir o recebimento |
+|---|---|
+| [![Conexão com a coleta confirmada](https://acompanha.maisludus.com.br/documentacao/acesso-coleta/04-conexao-confirmada.png)](https://acompanha.maisludus.com.br/documentacao/acesso-coleta/04-conexao-confirmada.png) | [![Sessão recebida no Dashboard](https://acompanha.maisludus.com.br/documentacao/recebimentos/01-recebimento-pendente.png)](https://acompanha.maisludus.com.br/documentacao/recebimentos/01-recebimento-pendente.png) |
+
+A sequência completa, com instruções e ampliação de cada captura, permanece na
+[documentação visual do LUDUS Acompanha](https://acompanha.maisludus.com.br/documentacao).
 
 ## Comece por aqui
 

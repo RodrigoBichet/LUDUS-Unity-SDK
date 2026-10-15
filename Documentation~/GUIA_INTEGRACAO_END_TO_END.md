@@ -1,7 +1,12 @@
 # Guia definitivo: integrar o LUDUS Unity SDK do zero ao Dashboard
 
 > **Veja este conteúdo com uma apresentação mais visual:** acesse a
-> [documentação do SDK no site LUDUS Acompanha](https://ludus-acompanha.netlify.app/documentacao).
+> [documentação do SDK no site LUDUS Acompanha](https://acompanha.maisludus.com.br/documentacao).
+
+Se preferir acompanhar uma execução completa antes de começar, assista ao
+[tutorial do SDK e do Dashboard](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-sdk-dashboard.mp4).
+Para ver a mesma integração aplicada a um jogo existente, assista à
+[aplicação no jogo Para Que Serve?](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-sdk-para-que-serve.mp4).
 
 Este é o roteiro principal para uma pessoa desenvolvedora integrar o SDK em um
 jogo Unity. Faça primeiro com um projeto ou cópia de teste e use somente nomes
