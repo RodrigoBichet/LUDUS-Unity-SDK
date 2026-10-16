@@ -763,6 +763,7 @@ public bool TryRecordDragPoint(
             snapshot = activeSession.CreateSnapshot(
                 GetElapsedMilliseconds()
             );
+            AppendAutomaticScreenshotsToSnapshot(snapshot);
             errorMessage = string.Empty;
             return true;
         }
@@ -1047,6 +1048,57 @@ private void RegisterFirstAction(int timestamp)
                     retainedAutomaticScreenshots[key]
                 );
                 availableSlots--;
+            }
+        }
+
+        private void AppendAutomaticScreenshotsToSnapshot(
+            LudusSession snapshot
+        )
+        {
+            if (snapshot == null || snapshot.screenshots == null)
+            {
+                return;
+            }
+
+            int availableSlots = Math.Min(
+                maxAutomaticScreenshots - snapshot.screenshots.Count,
+                MaxScreenshots - snapshot.screenshots.Count
+            );
+            if (availableSlots <= 0)
+            {
+                return;
+            }
+
+            List<string> orderedKeys = new List<string>(
+                retainedAutomaticScreenshots.Keys
+            );
+            orderedKeys.Sort(
+                (left, right) => -CompareVisualRelevance(left, right)
+            );
+
+            foreach (string key in orderedKeys)
+            {
+                if (availableSlots <= 0)
+                {
+                    return;
+                }
+
+                snapshot.screenshots.Add(retainedAutomaticScreenshots[key]);
+                availableSlots--;
+            }
+
+            if (
+                availableSlots > 0 &&
+                activeContextActivity != null &&
+                activeContextActivity.screenshotCandidate != null &&
+                !retainedAutomaticScreenshots.ContainsKey(
+                    activeContextActivity.visualReferenceKey
+                )
+            )
+            {
+                snapshot.screenshots.Add(
+                    activeContextActivity.screenshotCandidate
+                );
             }
         }
 

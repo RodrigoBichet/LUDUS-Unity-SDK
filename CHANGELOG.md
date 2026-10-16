@@ -6,6 +6,15 @@ Todas as mudanças relevantes do LUDUS Unity SDK serão registradas neste arquiv
 
 ### Adicionado
 
+- A Etapa 2 ganha o comando `LUDUS > Adicionar imagens ao mapa (Etapa 2)`,
+  com uma janela própria para usar todas as cenas acompanhadas ou escolher as
+  cenas cadastradas no Build Profiles; a seleção pode ser revista a qualquer
+  momento sem navegar pela Hierarchy ou pelo Inspector.
+- Capturas visuais novas passam a acompanhar os checkpoints automáticos da
+  sessão e são enviadas uma única vez, preservando o mapa mesmo quando a
+  pessoa encerra o Play depois de um progresso parcial confirmado.
+- O README passa a apresentar os comandos atualizados das Etapas 1 e 2 e o
+  tutorial em vídeo da configuração visual do mapa.
 - O modo simples mantém o botão L somente na cena inicial de conexão; a sessão
   e os coletores continuam ativos nas demais cenas, e o botão reaparece ao
   retornar ao menu.

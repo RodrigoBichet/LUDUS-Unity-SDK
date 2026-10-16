@@ -1337,6 +1337,73 @@ public void SessionLifecycle_ComContextoAtivo_RegistraTrajetoriaDeArraste()
         }
 
         [Test]
+        public void SessionLifecycle_CheckpointIncluiCandidataDoContextoAtivo()
+        {
+            LudusSdkConfig config =
+                ScriptableObject.CreateInstance<LudusSdkConfig>();
+            config.gameId = "jogo-teste";
+            config.capabilities.screenshots = true;
+
+            LudusSessionLifecycle lifecycle = new LudusSessionLifecycle();
+            Assert.That(
+                lifecycle.TryStartSession(
+                    config,
+                    new LudusParticipant(
+                        "000000000000000000000022",
+                        "Estudante Fictício"
+                    ),
+                    new LudusViewport(1280, 720, "pixel", "bottom-left"),
+                    out string startError
+                ),
+                Is.True,
+                startError
+            );
+            Assert.That(
+                lifecycle.TryBeginCaptureContext(
+                    new LudusCaptureContext(
+                        "Fase 1",
+                        "scene",
+                        "",
+                        true,
+                        "scene:fase-1"
+                    ),
+                    out string contextError
+                ),
+                Is.True,
+                contextError
+            );
+            Assert.That(
+                lifecycle.TryRecordAutomaticScreenshotCandidate(
+                    lifecycle.ActiveCaptureContextInstanceId,
+                    640,
+                    360,
+                    "/9j/Af/Z",
+                    out string screenshotError
+                ),
+                Is.True,
+                screenshotError
+            );
+
+            Assert.That(
+                lifecycle.TryCreateSnapshot(
+                    out LudusSession snapshot,
+                    out string snapshotError
+                ),
+                Is.True,
+                snapshotError
+            );
+
+            Object.DestroyImmediate(config);
+
+            Assert.That(snapshot.status, Is.EqualTo("in_progress"));
+            Assert.That(snapshot.screenshots.Count, Is.EqualTo(1));
+            Assert.That(
+                snapshot.screenshots[0].screenshotBase64,
+                Is.EqualTo("/9j/Af/Z")
+            );
+        }
+
+        [Test]
         public void SessionLifecycle_ComRecorteNaoMarcado_RejeitaCandidataAutomatica()
         {
             LudusSdkConfig config =

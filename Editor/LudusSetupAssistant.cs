@@ -14,7 +14,7 @@ namespace LudusSDK.Editor
         private const string TutorialScenePath =
             TutorialFolderPath + "/TutorialLudus.unity";
 
-        [MenuItem("LUDUS/Começar agora (modo simples)", false, 1)]
+        [MenuItem("LUDUS/Conectar ao Dashboard (Etapa 1)", false, 1)]
         private static void CreateSimpleIntegration()
         {
             Scene scene = SceneManager.GetActiveScene();
@@ -116,10 +116,115 @@ namespace LudusSDK.Editor
             Selection.activeGameObject = root;
             EditorGUIUtility.PingObject(root);
             EditorUtility.DisplayDialog(
-                "Modo simples pronto",
+                "Etapa 1 pronta",
                 "Pressione Play, informe um nome fictício e o código da coleta. A sessão começará automaticamente e cliques, movimentos e arrastes serão enviados ao Dashboard sem outras configurações na Unity.",
-                "Começar teste"
+                "Começar"
             );
+        }
+
+        public static bool TryEnableVisualMap(
+            LudusSceneScreenshotMode screenshotMode,
+            IReadOnlyCollection<string> selectedSceneNames,
+            out string message
+        )
+        {
+            if (Application.isPlaying)
+            {
+                message =
+                    "Pare o Play antes de configurar as imagens do mapa.";
+                return false;
+            }
+
+            LudusSessionController[] controllers =
+                UnityEngine.Object.FindObjectsByType<LudusSessionController>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None
+                );
+            LudusSessionController controller = null;
+            foreach (LudusSessionController candidate in controllers)
+            {
+                if (
+                    candidate != null &&
+                    candidate.gameObject.name == "LUDUS SDK — Modo simples"
+                )
+                {
+                    controller = candidate;
+                    break;
+                }
+            }
+
+            if (controller == null || controller.Config == null)
+            {
+                message =
+                    "Conclua primeiro a Etapa 1 na cena inicial do jogo.";
+                return false;
+            }
+
+            List<string> normalizedSceneNames = new List<string>();
+            if (selectedSceneNames != null)
+            {
+                foreach (string sceneName in selectedSceneNames)
+                {
+                    string normalizedName = sceneName == null
+                        ? string.Empty
+                        : sceneName.Trim();
+                    if (
+                        normalizedName.Length > 0 &&
+                        !normalizedSceneNames.Contains(normalizedName)
+                    )
+                    {
+                        normalizedSceneNames.Add(normalizedName);
+                    }
+                }
+            }
+
+            if (
+                screenshotMode == LudusSceneScreenshotMode.SelectedScenes &&
+                normalizedSceneNames.Count == 0
+            )
+            {
+                message = "Marque pelo menos uma cena para receber imagens.";
+                return false;
+            }
+
+            LudusSdkConfig config = controller.Config;
+            Undo.RecordObject(config, "Ativar imagens do mapa LUDUS");
+            if (config.capabilities == null)
+            {
+                config.capabilities = new LudusCapabilities();
+            }
+            config.capabilities.screenshots = true;
+            config.captureScreenshotOnContextStart = true;
+            config.sceneScreenshotMode = screenshotMode;
+            config.selectedScreenshotSceneNames.Clear();
+            config.selectedScreenshotSceneNames.AddRange(normalizedSceneNames);
+            EditorUtility.SetDirty(config);
+
+            LudusSceneCaptureCoordinator coordinator =
+                controller.GetComponent<LudusSceneCaptureCoordinator>();
+            if (coordinator == null)
+            {
+                coordinator = Undo.AddComponent<LudusSceneCaptureCoordinator>(
+                    controller.gameObject
+                );
+            }
+            Undo.RecordObject(coordinator, "Configurar imagens do mapa LUDUS");
+            coordinator.sessionController = controller;
+            EditorUtility.SetDirty(coordinator);
+
+            Scene scene = controller.gameObject.scene;
+            if (scene.IsValid())
+            {
+                EditorSceneManager.MarkSceneDirty(scene);
+            }
+            AssetDatabase.SaveAssets();
+
+            Selection.activeGameObject = controller.gameObject;
+            EditorGUIUtility.PingObject(controller.gameObject);
+            message = screenshotMode == LudusSceneScreenshotMode.AllTrackedScenes
+                ? "Imagens ativadas em todas as cenas acompanhadas."
+                : "Imagens ativadas nas cenas marcadas.";
+            return true;
         }
 
         [MenuItem("LUDUS/Criar tutorial de teste do SDK", false, 10)]

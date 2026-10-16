@@ -13,8 +13,8 @@ Jogo Unity + SDK  →  sessão da jogada  →  LUDUS Acompanha  →  Dashboard
 ```
 
 O primeiro teste não exige configurar manualmente cenas, componentes ou regras
-do jogo. Depois de instalar o pacote, use **LUDUS > Começar agora (modo
-simples)**, conecte o jogo a uma coleta de teste e já visualize o resultado no
+do jogo. Depois de instalar o pacote, use **LUDUS > Conectar ao Dashboard
+(Etapa 1)**, conecte o jogo a uma coleta de teste e já visualize o resultado no
 Dashboard.
 
 > **Prefere acompanhar com imagens e navegação visual?** Abra a
@@ -58,6 +58,12 @@ em outra velocidade pelo controle do navegador.
 **Tutorial da Etapa 1:** instalação do pacote, ativação do modo simples,
 criação da coleta, conexão do jogo e visualização dos primeiros dados no
 Dashboard.
+
+[![Tutorial da Etapa 2: adicione a tela do jogo ao mapa](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-etapa-2-capa.jpg)](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-etapa-2.mp4)
+
+**Tutorial da Etapa 2:** escolha das cenas acompanhadas, ativação das capturas
+visuais e conferência de cliques, movimentos e arrastes sobre a imagem do jogo
+no Dashboard.
 
 [![Tutorial completo do SDK e do Dashboard](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-sdk-dashboard-capa.jpg)](https://acompanha.maisludus.com.br/documentacao/videos/tutorial-sdk-dashboard.mp4)
 
@@ -172,7 +178,7 @@ Na Unity, abra a cena que é carregada primeiro quando a pessoa inicia o jogo �
 normalmente o menu ou a tela inicial — e execute:
 
 ```text
-LUDUS > Começar agora (modo simples)
+LUDUS > Conectar ao Dashboard (Etapa 1)
 ```
 
 Salve a cena e pressione **Play**. Quando aparecer a tela que solicita o nome do
@@ -217,10 +223,28 @@ primeiro resultado.
 ## Etapa 2: dar contexto visual ao mapa
 
 O mapa da Etapa 1 funciona sobre uma área neutra. Para exibir as interações
-sobre a imagem do jogo, selecione `LUDUS SDK — Modo simples`, abra a referência
-`ConfiguracaoLudus` no Inspector e, em **Capturas visuais**, habilite a captura
-da tela e a captura após a primeira interação. Faça outra jogada e compare a
-nova sessão no Dashboard. Use somente cenas e dados fictícios ou não sensíveis.
+sobre a imagem do jogo, pare o Play e execute:
+
+```text
+LUDUS > Adicionar imagens ao mapa (Etapa 2)
+```
+
+Uma janela própria será aberta. Use todas as cenas acompanhadas ou desmarque a
+opção recomendada para selecionar cenas individualmente. A lista manual reúne
+as cenas cadastradas em **File > Build Profiles** e também a cena aberta no
+momento. Se uma cena exibir senha, perfil ou outra informação pessoal que você
+não queira registrar, deixe-a desmarcada. Depois da escolha, clique em
+**Ativar imagens no mapa**.
+
+Pressione Play, conecte o jogo à coleta e jogue normalmente. A primeira
+interação relevante prepara a imagem, que entra automaticamente no próximo
+salvamento parcial. O recomendado ainda é voltar à tela inicial ao terminar a
+jogada, abrir o botão **L** e clicar em **Finalizar e enviar** para marcar a
+sessão como concluída no Dashboard.
+
+A seleção pode ser revisada a qualquer momento pelo mesmo menu. Ao criar uma
+cena nova, adicione-a em **File > Build Profiles** e abra novamente a Etapa 2
+para conferir se ela deve ou não receber imagens.
 
 ## Tutoriais e laboratório guiado (opcional)
 

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System;
 using System.Text;
 using UnityEngine;
@@ -19,6 +20,8 @@ namespace LudusSDK
         private string checkpointSessionId = string.Empty;
         private string checkpointKey = string.Empty;
         private string lastCheckpointSignature = string.Empty;
+        private readonly HashSet<string> checkpointedScreenshotKeys =
+            new HashSet<string>(StringComparer.Ordinal);
 
         private void OnEnable()
         {
@@ -63,6 +66,7 @@ namespace LudusSDK
                 return;
             }
 
+            EnsureCheckpointSessionState(snapshot.sessionId);
             string checkpointSignature = BuildCheckpointSignature(snapshot);
             if (string.Equals(
                 checkpointSignature,
@@ -73,9 +77,9 @@ namespace LudusSDK
                 return;
             }
 
-            // Imagens continuam no encerramento canônico; checkpoints devem
-            // ser pequenos e rápidos para funcionar bem em redes escolares.
-            snapshot.screenshots.Clear();
+            snapshot.screenshots = GetPendingScreenshots(
+                snapshot.screenshots
+            );
             if (
                 !LudusJsonSerializer.TrySerialize(
                     snapshot,
@@ -322,6 +326,12 @@ namespace LudusSDK
                 if (request.result == UnityWebRequest.Result.Success)
                 {
                     lastCheckpointSignature = checkpointSignature;
+                    foreach (LudusScreenshot screenshot in session.screenshots)
+                    {
+                        checkpointedScreenshotKeys.Add(
+                            GetScreenshotKey(screenshot)
+                        );
+                    }
                     Log(
                         config,
                         "Progresso parcial salvo: " + session.sessionId
@@ -348,8 +358,88 @@ namespace LudusSDK
                 session.clicks.Count,
                 session.mousePath.Count,
                 session.dragPath.Count,
-                session.gameEvents.Count
+                session.gameEvents.Count,
+                BuildScreenshotSignature(session.screenshots)
             );
+        }
+
+        private List<LudusScreenshot> GetPendingScreenshots(
+            List<LudusScreenshot> screenshots
+        )
+        {
+            List<LudusScreenshot> pending = new List<LudusScreenshot>();
+            if (screenshots == null)
+            {
+                return pending;
+            }
+
+            foreach (LudusScreenshot screenshot in screenshots)
+            {
+                if (
+                    screenshot != null &&
+                    !checkpointedScreenshotKeys.Contains(
+                        GetScreenshotKey(screenshot)
+                    )
+                )
+                {
+                    pending.Add(screenshot);
+                }
+            }
+
+            return pending;
+        }
+
+        private static string BuildScreenshotSignature(
+            List<LudusScreenshot> screenshots
+        )
+        {
+            if (screenshots == null || screenshots.Count == 0)
+            {
+                return "0";
+            }
+
+            List<string> keys = new List<string>();
+            foreach (LudusScreenshot screenshot in screenshots)
+            {
+                keys.Add(GetScreenshotKey(screenshot));
+            }
+            keys.Sort(StringComparer.Ordinal);
+            return string.Join(",", keys);
+        }
+
+        private static string GetScreenshotKey(LudusScreenshot screenshot)
+        {
+            if (screenshot == null)
+            {
+                return "captura-ausente";
+            }
+
+            return string.Join(
+                ":",
+                screenshot.contextInstanceId ?? string.Empty,
+                screenshot.timestamp,
+                screenshot.widthPx,
+                screenshot.heightPx
+            );
+        }
+
+        private void EnsureCheckpointSessionState(string sessionId)
+        {
+            if (
+                string.Equals(
+                    checkpointSessionId,
+                    sessionId,
+                    StringComparison.Ordinal
+                )
+            )
+            {
+                return;
+            }
+
+            checkpointSessionId = sessionId;
+            checkpointKey = string.Empty;
+            lastCheckpointSignature = string.Empty;
+            checkpointedScreenshotKeys.Clear();
         }
 
         private string GetCheckpointKey(string sessionId)
@@ -387,6 +477,7 @@ namespace LudusSDK
             checkpointSessionId = string.Empty;
             checkpointKey = string.Empty;
             lastCheckpointSignature = string.Empty;
+            checkpointedScreenshotKeys.Clear();
         }
 
         private static void SaveFallbackIfEnabled(
