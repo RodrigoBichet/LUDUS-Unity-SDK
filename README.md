@@ -175,15 +175,17 @@ normalmente o menu ou a tela inicial — e execute:
 LUDUS > Começar agora (modo simples)
 ```
 
-Salve a cena e pressione **Play**. Quando o modal pedir o nome e o código da
-coleta, mantenha-o aberto e siga para o próximo passo.
+Salve a cena e pressione **Play**. Quando aparecer a tela que solicita o nome do
+participante e o código da coleta, mantenha-a aberta e siga para o próximo
+passo.
 
-### 3. Crie sua conta e uma coleta de teste
+### 3. Prepare o laboratório e crie uma coleta de teste
 
-Com o modal do jogo aberto, crie gratuitamente uma conta de desenvolvedor no
-[LUDUS Acompanha](https://acompanha.maisludus.com.br/inicio). Entre em
-**Laboratório > Coletas de teste**, crie uma coleta e copie o código temporário
-exibido.
+Com essa tela do jogo aberta, volte ao
+[LUDUS Acompanha](https://acompanha.maisludus.com.br/inicio) e abra a
+**Visão geral** do Laboratório. Se este for o primeiro acesso, clique em
+**Criar laboratório de testes** e aguarde a preparação do ambiente. Depois,
+abra **Coletas de teste**, crie uma coleta e copie o código temporário exibido.
 
 ### 4. Conecte e jogue normalmente
 

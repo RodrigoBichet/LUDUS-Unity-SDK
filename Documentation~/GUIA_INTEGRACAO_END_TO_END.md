@@ -68,9 +68,11 @@ O primeiro resultado pode ser obtido assim:
 
 1. instalar o pacote pelo Package Manager;
 2. executar **LUDUS > Começar agora (modo simples)** na cena inicial, salvar a
-   cena e pressionar **Play** até o modal solicitar nome e código;
-3. com o modal aberto, criar uma conta de desenvolvedor e uma coleta fictícia
-   no LUDUS Acompanha;
+   cena e pressionar **Play** até aparecer a tela que solicita o nome do
+   participante e o código da coleta;
+3. com essa tela aberta, voltar ao LUDUS Acompanha e abrir a **Visão geral** do
+   Laboratório. No primeiro acesso, clicar em **Criar laboratório de testes**;
+   depois, abrir **Coletas de teste** e criar uma coleta fictícia;
 4. conectar por nome e código e jogar normalmente;
 5. abrir **Ver dados recebidos** no Dashboard e acessar o histórico concluído
    ou o último progresso parcial preservado.
@@ -412,11 +414,13 @@ no jogo integrado:
    cena inicial, de menu ou primeira cena do jogo. Neste tutorial, coloque-o
    dentro de `LUDUS — Exercício de interações`;
 5. o botão **L** é adicionado no canto superior direito. Posicione-o em outro
-   local se desejar, movendo apenas o elemento visual sem remover o objeto ou o
-   modal;
+   local se desejar, movendo apenas o elemento visual sem remover o objeto ou a
+   tela de acesso;
 6. pressione **Play** para validar o fluxo diretamente na Unity;
-7. no site LUDUS Acompanha, abra **Laboratório > Coletas de teste**, crie a
-   coleta e copie o código temporário;
+7. no site LUDUS Acompanha, abra a **Visão geral** do Laboratório. Se este for
+   o primeiro acesso, clique em **Criar laboratório de testes** e aguarde a
+   preparação do ambiente. Depois, abra **Coletas de teste**, crie a coleta e
+   copie o código temporário;
 8. no tutorial em execução, use o botão **L**, informe o nome do participante e
    o código copiado;
 9. após a conexão, percorra o tutorial. Ao abrir **Tutorial concluído**, a
